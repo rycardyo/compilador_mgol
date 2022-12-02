@@ -2,7 +2,7 @@ from typing import Dict
 import tokenLexico as token
 
 class estado():
-    def __init__(self, id:int, final:bool = False, token_class: token.Classes = token.Classes.ERRO, token_type : token.Tipos = None) -> None:
+    def __init__(self, id: int, final:bool = False, token_class: token.Classes = token.Classes.ERRO, token_type : token.Tipos = None) -> None:
         self.id = id
 
     #transicoes dict[str, estado]
@@ -17,27 +17,26 @@ class estado():
 
 
 class afd():
-    estados : list
-    
-    tabela_transicoes: Dict[str, dict]
+    _estados : list
+    _tabela_transicoes: Dict[str, dict]
 
     def gera_transicoes(self, entradas: list, id_estado_atual: str, id_destino: str) -> None:
-        transicoes = self.tabela_transicoes[id_estado_atual]
+        _transicoes = self._tabela_transicoes[id_estado_atual]
         for item in entradas:
-            transicoes[item] = self.estados[int(id_destino)]
+            _transicoes[item] = self._estados[int(id_destino)]
         
-        self.tabela_transicoes[id_estado_atual] = transicoes
+        self._tabela_transicoes[id_estado_atual] = _transicoes
 
 
     def gera_tabela_transicoes(self) -> None:
-        self.tabela_transicoes = {str(estado.id) : {} for estado in self.estados}
+        self._tabela_transicoes = {str(estado.id) : {} for estado in self._estados}
         
 
         # Estado 0
         estado_atual = '0'
         self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual,'1')
         self.gera_transicoes(self.ALFABETO_LETRAS, estado_atual,'7')
-        self.gera_transicoes(["="], estado_atual, '8')
+        self.gera_transicoes(['"'], estado_atual, '8')
         self.gera_transicoes(["{"], estado_atual, '11')
         self.gera_transicoes(["EOF"], estado_atual, '14')
         self.gera_transicoes([">"], estado_atual, '15')
@@ -78,18 +77,88 @@ class afd():
         self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, estado_atual)
 
         # Estado 07
-        estado_atual = '6'
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, estado_atual)
+        estado_atual = '7'
+        self.gera_transicoes(self.ALFABETO_DIGITOS + self.ALFABETO_LETRAS + ['_'], estado_atual, estado_atual)
 
+        # Estado 08
+        estado_atual = '8'
+        self.gera_transicoes(self.ALFABETO, estado_atual, '9')
+
+        # Estado 09
+        estado_atual = '9'
+        self.gera_transicoes(self.ALFABETO, estado_atual, estado_atual)
+        self.gera_transicoes(['"'], estado_atual, '10')
+
+        # Estado 10
+        # Estado final sem transições
+        
+        # Estado 11
+        estado_atual = '11'
+        self.gera_transicoes(self.ALFABETO, estado_atual, '12')
+
+        # Estado 12
+        estado_atual = '12'
+        self.gera_transicoes(self.ALFABETO, estado_atual, estado_atual)
+        self.gera_transicoes(['}'], estado_atual, '13')
+
+        # Estado 13
+        # Estado final sem transições
+
+        # Estado 14
+        # Estado final sem transições
+
+        # Estado 15
+        estado_atual = '15'
+        self.gera_transicoes(['='], estado_atual, '16')
+
+        # Estado 16
+        # Estado final sem transições
+
+        # Estado 17
+        estado_atual = '17'
+        self.gera_transicoes(['='],estado_atual, '18')
+        self.gera_transicoes(['<'],estado_atual, '19')
+        self.gera_transicoes(['-'], estado_atual, '20')
+
+        # Estado 18
+        # Estado final sem transicoes
+
+        # Estado 19
+        # Estado final sem transicoes
+
+        # Estado 20
+        # Estado final sem transicoes
+
+        # Estado 21
+        # Estado final sem transicoes
+        
+        # Estado 22
+        # Estado final sem transicoes
+
+        # Estado 23
+        # Estado final sem transicoes
+
+        # Estado 24
+        # Estado final sem transicoes
+
+        # Estado 25
+        # Estado final sem transicoes
+
+        # Estado 26
+        # Estado final sem transicoes
+
+        # Estado 27
+        # Estado final sem transicoes        
+        
 
     def transicao(self, idx_estado: int, entrada : str) -> estado:
         try:
-            return self.estados[idx_estado].transicoes[entrada]
+            return self._estados[idx_estado].transicoes[entrada]
         except KeyError: 
             # Retorna estado de erro
-            return self.estados[-1]    
+            return self._estados[-1]    
 
-    def __init__(self, qntd_estados: int) -> None:
+    def __init__(self, qntd__estados: int) -> None:
             
         
         self.ALFABETO_LETRAS = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
@@ -98,57 +167,57 @@ class afd():
         self.ALFABETO_DEMAIS_CARACTERS = [',', ';', ':', '.', '!', '?', '\\', '*', '+', '-', '/', '(', ')', '{', '}', '[',']', '<', '>', '=', "‘", '“']
         self.ALFABETO = self.ALFABETO_DIGITOS + self.ALFABETO_LETRAS + self.ALFABETO_DEMAIS_CARACTERS
         
-        # Criando os estados
-        self.estados = [estado(id = i) for i in range(qntd_estados)]
+        # Criando os _estados
+        self._estados = [estado(id = i) for i in range(qntd__estados)]
 
-        # Definindo os estados finais 
+        # Definindo os _estados finais 
         
         # Numericos
-        self.estados[1].is_final(token.Classes.NUM, token.Tipos.INTEIRO)
-        self.estados[3].is_final(token.Classes.NUM, token.Tipos.REAL)
-        self.estados[6].is_final(token.Classes.NUM, token.Tipos.REAL)
+        self._estados[1].is_final(token.Classes.NUM, token.Tipos.INTEIRO)
+        self._estados[3].is_final(token.Classes.NUM, token.Tipos.REAL)
+        self._estados[6].is_final(token.Classes.NUM, token.Tipos.REAL)
 
         # Ids
         # Os tipos do id deveram ser definidos com auxilio das palavras reservadas INTEIRO, REAL, etc
-        self.estados[7].is_final(token.Classes.ID)
+        self._estados[7].is_final(token.Classes.ID)
 
         # Literal
-        self.estados[10].is_final(token.Classes.LIT, token.Tipos.LITERAL)
+        self._estados[10].is_final(token.Classes.LIT, token.Tipos.LITERAL)
 
         # Comentario
-        self.estados[13].is_final(token.Classes.COMENTARIO)
+        self._estados[13].is_final(token.Classes.COMENTARIO)
 
         # EOF
-        self.estados[14].is_final(token.Classes.EOF)
+        self._estados[14].is_final(token.Classes.EOF)
 
         # OPRs 
-        self.estados[15].is_final(token.Classes.OPR)
-        self.estados[16].is_final(token.Classes.OPR)
-        self.estados[17].is_final(token.Classes.OPR)
-        self.estados[18].is_final(token.Classes.OPR)
-        self.estados[19].is_final(token.Classes.OPR)
-        self.estados[21].is_final(token.Classes.OPR)
+        self._estados[15].is_final(token.Classes.OPR)
+        self._estados[16].is_final(token.Classes.OPR)
+        self._estados[17].is_final(token.Classes.OPR)
+        self._estados[18].is_final(token.Classes.OPR)
+        self._estados[19].is_final(token.Classes.OPR)
+        self._estados[21].is_final(token.Classes.OPR)
 
         #Atr
-        self.estados[20].is_final(token.Classes.ATR)
+        self._estados[20].is_final(token.Classes.ATR)
 
         # OPA
-        self.estados[22].is_final(token.Classes.OPA)
+        self._estados[22].is_final(token.Classes.OPA)
 
         # VIR
-        self.estados[23].is_final(token.Classes.VIR)
+        self._estados[23].is_final(token.Classes.VIR)
 
         # PT_V
-        self.estados[24].is_final(token.Classes.PT_V)
+        self._estados[24].is_final(token.Classes.PT_V)
 
         # AB_P
-        self.estados[25].is_final(token.Classes.AB_P)
+        self._estados[25].is_final(token.Classes.AB_P)
 
         # FC_P
-        self.estados[26].is_final(token.Classes.ATR)
+        self._estados[26].is_final(token.Classes.ATR)
 
         # ERRO
-        self.estados[27].is_final(token.Classes.ERRO)
+        self._estados[27].is_final(token.Classes.ERRO)
 
 
         
@@ -173,4 +242,4 @@ class afd():
     '''
 
 automato = afd(28)
-print(automato.tabela_transicoes)
+print(automato._tabela_transicoes)
