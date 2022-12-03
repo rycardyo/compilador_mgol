@@ -219,15 +219,17 @@ class afd():
         # ERRO
         self._estados[27].is_final(token.Classes.ERRO)
 
-
-        
-
         # Gera a tabela de transicoes
         self.gera_tabela_transicoes()
 
         # Define as transicoes de cada estado 
+        
+        # Uma alternativa seria nao utiliza as transições de cada estado mas a propria tabela de transicoes dentro do scanner
+        for idx, _ in enumerate(self._estados):
+            self._estados[idx].gera_transicao(self._tabela_transicoes[str(self._estados[idx].id)])
 
-
+        
+        del self._tabela_transicoes
 
     # Pseudo algoritmo do scanner
     '''
@@ -242,4 +244,4 @@ class afd():
     '''
 
 automato = afd(28)
-print(automato._tabela_transicoes)
+print(automato._estados[0].transicoes)
