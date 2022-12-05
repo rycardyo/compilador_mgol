@@ -30,7 +30,7 @@ class TabelaSimbolos:
         "lexema": palavraReservada.value,
         "tipo":palavraReservada.value,
       }
-      self.__simbolos[token["lexema"]] = token
+      self.__simbolos[palavraReservada.value] = token
   
   def inserir(self, token: Token) -> Token:
     if token["lexema"] in self.__simbolos:

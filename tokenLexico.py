@@ -14,13 +14,14 @@ class Classes(Enum):
   PT_V = "PT_V"
   VIR = "VIR"
   ERRO = "ERRO"
-  IGNORAR = "IGNORAR"
   EOF = "EOF"
+  NONE = None
 
 class Tipos(Enum):
   INTEIRO = "INTEIRO"
   REAL = "REAL"
   LITERAL = "LITERAL"
+  NONE = None
 
 class Token(TypedDict):
   classe: Classes

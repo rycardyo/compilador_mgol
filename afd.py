@@ -1,247 +1,242 @@
-from typing import Dict
+from typing import Dict, List, Tuple
+from enum import Enum
+from scanner import ErrosLexicos
 import tokenLexico as token
 
-class estado():
-    def __init__(self, id: int, final:bool = False, token_class: token.Classes = token.Classes.ERRO, token_type : token.Tipos = None) -> None:
+class ClassesEntrada(Enum):
+  LETRA = 'L'
+  DIGITO = 'D'
+  CORINGA = 'C'
+  IGNORAR = 'I'
+  EOF = 'EOF'
+
+class Estado():
+    id: int
+    final: bool = False
+    token_class: token.Classes = token.Classes.NONE
+    token_type: token.Tipos = token.Tipos.NONE
+    transicoes: dict = {}
+
+    def __init__(self, id: int) -> None:
         self.id = id
+        self.final = False
+        self.token_class = token.Classes.NONE
+        self.token_type = token.Tipos.NONE
+        self.transicoes = {}
 
-    #transicoes dict[str, estado]
-    def gera_transicao(self, transicoes : dict) -> None:
-        self.transicoes = transicoes
+    def gera_transicoes(self, entradas: List[str], estado_destino):
+        for entrada in entradas:
+            self.transicoes[entrada] = estado_destino
 
-
-    def is_final(self, token_class: token.Classes, token_type: token.Tipos = None) -> None:
+    def define_estado_final(self, token_class: token.Classes, token_type: token.Tipos = token.Tipos.NONE) -> None:
         self.final = True 
         self.token_class = token_class
         self.token_type = token_type
 
-
-class afd():
-    _estados : list
+class AFD():
+    _estados : List[Estado]
     _tabela_transicoes: Dict[str, dict]
+    estado_atual: Estado
+    caminho_percorrido: str
 
-    def gera_transicoes(self, entradas: list, id_estado_atual: str, id_destino: str) -> None:
-        _transicoes = self._tabela_transicoes[id_estado_atual]
-        for item in entradas:
-            _transicoes[item] = self._estados[int(id_destino)]
-        
-        self._tabela_transicoes[id_estado_atual] = _transicoes
-
-
-    def gera_tabela_transicoes(self) -> None:
-        self._tabela_transicoes = {str(estado.id) : {} for estado in self._estados}
-        
+    def inicia_estados(self) -> None:
+        self._estados = [Estado(id = i) for i in range(28)]
 
         # Estado 0
-        estado_atual = '0'
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual,'1')
-        self.gera_transicoes(self.ALFABETO_LETRAS, estado_atual,'7')
-        self.gera_transicoes(['"'], estado_atual, '8')
-        self.gera_transicoes(["{"], estado_atual, '11')
-        self.gera_transicoes(["EOF"], estado_atual, '14')
-        self.gera_transicoes([">"], estado_atual, '15')
-        self.gera_transicoes(["<"], estado_atual, '17')
-        self.gera_transicoes(["="], estado_atual, '21')
-        self.gera_transicoes(["/","*","-","+"], estado_atual, '22')
-        self.gera_transicoes([","], estado_atual, '23')
-        self.gera_transicoes([";"], estado_atual, '24')
-        self.gera_transicoes(["("], estado_atual, '25')
-        self.gera_transicoes([")"], estado_atual, '26')
-        # O ERRO PODE SER GERADO A PARTIR DA EXCEPTION KEYERROR...  
+        self._estados[0].gera_transicoes([ClassesEntrada.IGNORAR.value], self._estados[0])
+        self._estados[0].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[1])
+        self._estados[0].gera_transicoes([ClassesEntrada.LETRA.value], self._estados[7])
+        self._estados[0].gera_transicoes(['"'], self._estados[8])
+        self._estados[0].gera_transicoes(["{"], self._estados[11])
+        self._estados[0].gera_transicoes([ClassesEntrada.EOF.value], self._estados[14])
+        self._estados[0].gera_transicoes([">"], self._estados[15])
+        self._estados[0].gera_transicoes(["<"], self._estados[17])
+        self._estados[0].gera_transicoes(["="], self._estados[21])
+        self._estados[0].gera_transicoes(["/","*","-","+"], self._estados[22])
+        self._estados[0].gera_transicoes([","], self._estados[23])
+        self._estados[0].gera_transicoes([";"], self._estados[24])
+        self._estados[0].gera_transicoes(["("], self._estados[25])
+        self._estados[0].gera_transicoes([")"], self._estados[26])
         
         # Estado 01
-        estado_atual = '1'
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, estado_atual)
-        self.gera_transicoes(["."], estado_atual, '2')
-        self.gera_transicoes(["e","E"], estado_atual, '4')
+        self._estados[1].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[1])
+        self._estados[1].gera_transicoes(["."], self._estados[2])
+        self._estados[1].gera_transicoes(["e","E"], self._estados[4])
+        self._estados[1].define_estado_final(token.Classes.NUM, token.Tipos.INTEIRO)
 
         # Estado 02
-        estado_atual = '2'
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, '3')
+        self._estados[2].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[3])
 
         # Estado 03
-        estado_atual = '3'
-        self.gera_transicoes(["e","E"], estado_atual, '4')
+        self._estados[3].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[3])
+        self._estados[3].gera_transicoes(["e","E"], self._estados[4])
+        self._estados[3].define_estado_final(token.Classes.NUM, token.Tipos.REAL)
         
         # Estado 04
-        estado_atual = '4'
-        self.gera_transicoes(['+','-'], estado_atual, '5')
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, '6')                                
+        self._estados[4].gera_transicoes(['+','-'], self._estados[5])
+        self._estados[4].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[6])
 
         # Estado 05
-        estado_atual = '5'
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, '6')
+        self._estados[5] = self._estados[5]
+        self._estados[5].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[6])
 
         # Estado 06
-        estado_atual = '6'
-        self.gera_transicoes(self.ALFABETO_DIGITOS, estado_atual, estado_atual)
+        self._estados[6].gera_transicoes([ClassesEntrada.DIGITO.value], self._estados[6])
+        self._estados[6].define_estado_final(token.Classes.NUM, token.Tipos.REAL)
 
         # Estado 07
-        estado_atual = '7'
-        self.gera_transicoes(self.ALFABETO_DIGITOS + self.ALFABETO_LETRAS + ['_'], estado_atual, estado_atual)
+        self._estados[7].gera_transicoes([ClassesEntrada.DIGITO.value] + [ClassesEntrada.LETRA.value] + ['_'], self._estados[7])
+        self._estados[7].define_estado_final(token.Classes.ID)
 
         # Estado 08
-        estado_atual = '8'
-        self.gera_transicoes(self.ALFABETO, estado_atual, '9')
+        self._estados[8].gera_transicoes([ClassesEntrada.CORINGA.value], self._estados[9])
+        self._estados[8].gera_transicoes(['"'], self._estados[10])
 
         # Estado 09
-        estado_atual = '9'
-        self.gera_transicoes(self.ALFABETO, estado_atual, estado_atual)
-        self.gera_transicoes(['"'], estado_atual, '10')
+        self._estados[9].gera_transicoes([ClassesEntrada.CORINGA.value], self._estados[9])
+        self._estados[9].gera_transicoes(['"'], self._estados[10])
 
         # Estado 10
         # Estado final sem transições
+        self._estados[10].define_estado_final(token.Classes.LIT, token.Tipos.LITERAL)
         
         # Estado 11
-        estado_atual = '11'
-        self.gera_transicoes(self.ALFABETO, estado_atual, '12')
+        self._estados[11].gera_transicoes([ClassesEntrada.CORINGA.value], self._estados[12])
+        self._estados[11].gera_transicoes(['}'], self._estados[13])
 
         # Estado 12
-        estado_atual = '12'
-        self.gera_transicoes(self.ALFABETO, estado_atual, estado_atual)
-        self.gera_transicoes(['}'], estado_atual, '13')
+        self._estados[12].gera_transicoes([ClassesEntrada.CORINGA.value], self._estados[12])
+        self._estados[12].gera_transicoes(['}'], self._estados[13])
 
         # Estado 13
         # Estado final sem transições
+        self._estados[13].define_estado_final(token.Classes.COMENTARIO)
 
         # Estado 14
         # Estado final sem transições
+        self._estados[14].define_estado_final(token.Classes.EOF)
 
         # Estado 15
-        estado_atual = '15'
-        self.gera_transicoes(['='], estado_atual, '16')
+        self._estados[15].gera_transicoes(['='], self._estados[16])
+        self._estados[15].define_estado_final(token.Classes.OPR)
 
         # Estado 16
         # Estado final sem transições
+        self._estados[16].define_estado_final(token.Classes.OPR)
 
         # Estado 17
-        estado_atual = '17'
-        self.gera_transicoes(['='],estado_atual, '18')
-        self.gera_transicoes(['<'],estado_atual, '19')
-        self.gera_transicoes(['-'], estado_atual, '20')
+        self._estados[17].gera_transicoes(['='], self._estados[18])
+        self._estados[17].gera_transicoes(['<'], self._estados[19])
+        self._estados[17].gera_transicoes(['-'], self._estados[20])
+        self._estados[17].define_estado_final(token.Classes.OPR)
 
         # Estado 18
         # Estado final sem transicoes
+        self._estados[18].define_estado_final(token.Classes.OPR)
 
         # Estado 19
         # Estado final sem transicoes
+        self._estados[19].define_estado_final(token.Classes.OPR)
 
         # Estado 20
         # Estado final sem transicoes
+        self._estados[20].define_estado_final(token.Classes.ATR)
 
         # Estado 21
         # Estado final sem transicoes
+        self._estados[21].define_estado_final(token.Classes.OPR)
         
         # Estado 22
         # Estado final sem transicoes
+        self._estados[22].define_estado_final(token.Classes.OPA)
 
         # Estado 23
         # Estado final sem transicoes
+        self._estados[23].define_estado_final(token.Classes.VIR)
 
         # Estado 24
         # Estado final sem transicoes
+        self._estados[24].define_estado_final(token.Classes.PT_V)
 
         # Estado 25
         # Estado final sem transicoes
+        self._estados[25].define_estado_final(token.Classes.AB_P)
 
         # Estado 26
         # Estado final sem transicoes
+        self._estados[26].define_estado_final(token.Classes.ATR)
 
         # Estado 27
-        # Estado final sem transicoes        
+        # Estado final sem transicoes
+        self._estados[27].define_estado_final(token.Classes.ERRO)
         
-
-    def transicao(self, idx_estado: int, entrada : str) -> estado:
-        try:
-            return self._estados[idx_estado].transicoes[entrada]
-        except KeyError: 
-            # Retorna estado de erro
-            return self._estados[-1]    
-
-    def __init__(self, qntd__estados: int) -> None:
-            
-        
+    def __init__(self) -> None:
         self.ALFABETO_LETRAS = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
         self.ALFABETO_LETRAS = self.ALFABETO_LETRAS + [x.upper() for x in self.ALFABETO_LETRAS]
-        self.ALFABETO_DIGITOS = [x for x in range(10)]
-        self.ALFABETO_DEMAIS_CARACTERS = [',', ';', ':', '.', '!', '?', '\\', '*', '+', '-', '/', '(', ')', '{', '}', '[',']', '<', '>', '=', "‘", '“']
-        self.ALFABETO = self.ALFABETO_DIGITOS + self.ALFABETO_LETRAS + self.ALFABETO_DEMAIS_CARACTERS
-        
-        # Criando os _estados
-        self._estados = [estado(id = i) for i in range(qntd__estados)]
+        self.ALFABETO_DIGITOS = [str(x) for x in range(10)]
+        self.ALFABETO_DEMAIS_CARACTERS = [',', ';', ':', '.', '!', '?', '*', '+', '-', '/', '(', ')', '[',']', '<', '>', '=', '\'', '\"', '{', '}', '_']
+        self.ALFABETO_IGNORAR = [' ', '\n', '\r', '\t']
+        self.ALFABETO_EOF = ['']
+        self.ALFABETO = self.ALFABETO_DIGITOS + self.ALFABETO_LETRAS + self.ALFABETO_DEMAIS_CARACTERS + self.ALFABETO_IGNORAR + self.ALFABETO_EOF
 
-        # Definindo os _estados finais 
-        
-        # Numericos
-        self._estados[1].is_final(token.Classes.NUM, token.Tipos.INTEIRO)
-        self._estados[3].is_final(token.Classes.NUM, token.Tipos.REAL)
-        self._estados[6].is_final(token.Classes.NUM, token.Tipos.REAL)
+        self.inicia_estados()
 
-        # Ids
-        # Os tipos do id deveram ser definidos com auxilio das palavras reservadas INTEIRO, REAL, etc
-        self._estados[7].is_final(token.Classes.ID)
+        self.volta_inicio()
 
-        # Literal
-        self._estados[10].is_final(token.Classes.LIT, token.Tipos.LITERAL)
+    def transicao(self, caractere : str) -> Tuple[bool, str, int]:
+        entrada = self.caractere_para_entrada(caractere)
+        eh_comentario = self.estado_atual in [self._estados[11], self._estados[12]]
+        eh_literal = self.estado_atual in [self._estados[8], self._estados[9]]
 
-        # Comentario
-        self._estados[13].is_final(token.Classes.COMENTARIO)
+        if eh_literal:
+            if entrada == token.Classes.EOF.value:
+                self.estado_atual = self._estados[27]
+                return True, self.caminho_percorrido, ErrosLexicos.LITERAL_INCOMPLETA.value
+            elif entrada != "\"":
+                entrada = ClassesEntrada.CORINGA.value
 
-        # EOF
-        self._estados[14].is_final(token.Classes.EOF)
 
-        # OPRs 
-        self._estados[15].is_final(token.Classes.OPR)
-        self._estados[16].is_final(token.Classes.OPR)
-        self._estados[17].is_final(token.Classes.OPR)
-        self._estados[18].is_final(token.Classes.OPR)
-        self._estados[19].is_final(token.Classes.OPR)
-        self._estados[21].is_final(token.Classes.OPR)
+        if eh_comentario:
+            if entrada == token.Classes.EOF.value:
+                self.estado_atual = self._estados[27]
+                return True, self.caminho_percorrido, ErrosLexicos.COMENTARIO_INCOMPLETO.value
+            elif entrada != "}":
+                entrada = ClassesEntrada.CORINGA.value
 
-        #Atr
-        self._estados[20].is_final(token.Classes.ATR)
+        existe_transicao = entrada in self.estado_atual.transicoes
+        if existe_transicao:
+            self.estado_atual = self.estado_atual.transicoes[entrada]
 
-        # OPA
-        self._estados[22].is_final(token.Classes.OPA)
+            if entrada != ClassesEntrada.IGNORAR.value:
+                self.caminho_percorrido = self.caminho_percorrido + caractere
 
-        # VIR
-        self._estados[23].is_final(token.Classes.VIR)
+            terminou = entrada == ClassesEntrada.EOF.value
+            return terminou, self.caminho_percorrido, None
 
-        # PT_V
-        self._estados[24].is_final(token.Classes.PT_V)
+        if not self.estado_atual.final:
+            erro_estado_inicial = self.estado_atual == self._estados[0]
+            self.estado_atual = self._estados[27]
 
-        # AB_P
-        self._estados[25].is_final(token.Classes.AB_P)
-
-        # FC_P
-        self._estados[26].is_final(token.Classes.ATR)
-
-        # ERRO
-        self._estados[27].is_final(token.Classes.ERRO)
-
-        # Gera a tabela de transicoes
-        self.gera_tabela_transicoes()
-
-        # Define as transicoes de cada estado 
-        
-        # Uma alternativa seria nao utiliza as transições de cada estado mas a propria tabela de transicoes dentro do scanner
-        for idx, _ in enumerate(self._estados):
-            self._estados[idx].gera_transicao(self._tabela_transicoes[str(self._estados[idx].id)])
-
-        
-        del self._tabela_transicoes
-
-    # Pseudo algoritmo do scanner
-    '''
-        estado_atual = estado_0
-        for char in input:
-            if estado_atual.possui_transicoes:
-                estado_atual = estado_atual.transicao[char]
+            if erro_estado_inicial:
+                return True, entrada, ErrosLexicos.CARACTERE_INVALIDO.value
             else:
-                break
-            # Onde a possui_transicoes pode ser um dos atributos do estado do automato que indica se o mesmo possui ou não transicoes 
-            # Ao inves disso posso tentar somente retornar um break na funcao de transicoes do estado quando ele nao as possuir  
-    '''
+                return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO.value
 
-automato = afd(28)
-print(automato._estados[0].transicoes)
+        return True, self.caminho_percorrido, None
+
+    def caractere_para_entrada(self, caractere):
+        if caractere in self.ALFABETO_LETRAS:
+            if self.estado_atual in [self._estados[1], self._estados[3]] and caractere in ['E', 'e']:
+                return caractere
+            return ClassesEntrada.LETRA.value
+        if caractere in self.ALFABETO_DIGITOS:
+            return ClassesEntrada.DIGITO.value
+        if caractere in self.ALFABETO_IGNORAR:
+            return ClassesEntrada.IGNORAR.value
+        if caractere in self.ALFABETO_EOF:
+            return ClassesEntrada.EOF.value
+        return caractere
+
+    def volta_inicio(self):
+        self.estado_atual = self._estados[0]
+        self.caminho_percorrido = ""
