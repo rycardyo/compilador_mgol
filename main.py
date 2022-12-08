@@ -1,5 +1,6 @@
-import sys
+# Versao python : 3.10
 
+import sys
 import tabelaSimbolos
 from tokenLexico import Classes, Token
 from scanner import SCANNER
