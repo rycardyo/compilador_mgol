@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from enum import Enum
-from scanner import ErrosLexicos
+import scanner
 import tokenLexico as token
 
 class ClassesEntrada(Enum):
@@ -191,7 +191,7 @@ class AFD():
         if eh_literal:
             if entrada == token.Classes.EOF.value:
                 self.estado_atual = self._estados[27]
-                return True, self.caminho_percorrido, ErrosLexicos.LITERAL_INCOMPLETA.value
+                return True, self.caminho_percorrido, scanner.ErrosLexicos.LITERAL_INCOMPLETA.value
             elif entrada != "\"":
                 entrada = ClassesEntrada.CORINGA.value
 
@@ -199,10 +199,10 @@ class AFD():
         if eh_comentario:
             if entrada == token.Classes.EOF.value:
                 self.estado_atual = self._estados[27]
-                return True, self.caminho_percorrido, ErrosLexicos.COMENTARIO_INCOMPLETO.value
+                return True, self.caminho_percorrido, scanner.ErrosLexicos.COMENTARIO_INCOMPLETO.value
             elif entrada != "}":
                 entrada = ClassesEntrada.CORINGA.value
-
+        
         existe_transicao = entrada in self.estado_atual.transicoes
         if existe_transicao:
             self.estado_atual = self.estado_atual.transicoes[entrada]
@@ -218,9 +218,9 @@ class AFD():
             self.estado_atual = self._estados[27]
 
             if erro_estado_inicial:
-                return True, entrada, ErrosLexicos.CARACTERE_INVALIDO.value
+                return True, entrada, scanner.ErrosLexicos.CARACTERE_INVALIDO.value
             else:
-                return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO.value
+                return True, self.caminho_percorrido, scanner.ErrosLexicos.LEXEMA_MAL_FORMADO.value
 
         return True, self.caminho_percorrido, None
 
@@ -235,6 +235,7 @@ class AFD():
             return ClassesEntrada.IGNORAR.value
         if caractere in self.ALFABETO_EOF:
             return ClassesEntrada.EOF.value
+        
         return caractere
 
     def volta_inicio(self):

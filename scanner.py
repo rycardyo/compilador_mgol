@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import Any
-from afd import AFD
+import afd
 from tokenLexico import Token, Classes
 from tabelaSimbolos import tabelaSimbolos
-
 import sys
+
 
 class ErrosLexicos(Enum):
   CARACTERE_INVALIDO = 1
@@ -17,14 +17,14 @@ class Scan:
   num_coluna: int
   arquivo: Any
   caractere: str
-  afd: AFD
+  afd: afd.AFD
 
   def __init__(self) -> None:
     self.num_linha = 1
     self.num_coluna = 0
     self.arquivo = None
     self.caractere = ' '
-    self.afd = AFD()
+    self.afd = afd.AFD()
 
   def ler_proximo_caractere(self):
     if self.caractere in ['\n', '\r']:
