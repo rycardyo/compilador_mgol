@@ -4,7 +4,7 @@ import scanner
 import tokenLexico as token
 
 class ClassesEntrada(Enum):
-  LETRA = 'L'gi
+  LETRA = 'L'
   DIGITO = 'D'
   CORINGA = 'C'
   IGNORAR = 'I'

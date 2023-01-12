@@ -1,21 +1,9 @@
+import sys
 from enum import Enum
 from typing import Dict, Optional
-
 from tokenLexico import Token
-
-class PalavrasReservadas(Enum):
-  INICIO = "inicio"
-  VARINICIO = "varinicio"
-  VARFIM = "varfim"
-  ESCREVA = "escreva"
-  LEIA = "leia"
-  SE = "se"
-  ENTAO = "entao"
-  FIMSE = "fimse"
-  FIM = "fim"
-  INTEIRO = "inteiro"
-  LITERAL = "literal"
-  REAL = "real"
+from os.path import realpath, dirname
+from palavrasReservadas import PalavrasReservadas
 
 
 class TabelaSimbolos:
