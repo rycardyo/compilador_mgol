@@ -14,7 +14,7 @@ class Classes(Enum):
   PT_V = "PT_V"
   VIR = "VIR"
   ERRO = "ERRO"
-  EOF = "EOF"
+  EOF = "$"
   NONE = None
 
 class Tipos(Enum):

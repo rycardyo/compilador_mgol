@@ -8,7 +8,7 @@ class ClassesEntrada(Enum):
   DIGITO = 'D'
   CORINGA = 'C'
   IGNORAR = 'I'
-  EOF = 'EOF'
+  EOF = '$'
 
 class Estado():
     id: int
@@ -164,7 +164,7 @@ class AFD():
 
         # Estado 26
         # Estado final sem transicoes
-        self._estados[26].define_estado_final(token.Classes.ATR)
+        self._estados[26].define_estado_final(token.Classes.FC_P)
 
         # Estado 27
         # Estado final sem transicoes

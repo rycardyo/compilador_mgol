@@ -1,16 +1,13 @@
-_inicio
+inicio
 varinicio
 literal A;
-inteiro B, D, E;
-real C ;
+inteiro B, D;
+real C;
 varfim;
-escreva 57e-48
-5.8e37
-4.78E97
-"Digite B:";
+escreva "Digite B:";
 leia B;
-escrevass "Digite A:";
-leia _A;
+escreva "Digite A:";
+leia A;
 se(B>2)
 entao
 se(B<=4)
@@ -23,10 +20,7 @@ B<-B+2;
 B<-B+3;
 D<-B;
 C<-5.0;
- E<-B+2;
- escreva C;
- B<-B+1;
-escreva "\nB=\n"; {\n é o símbolo para salto de linha}
+escreva "\nB=\n";
 escreva D;
 escreva "\n";
 escreva C;

@@ -1,18 +1,17 @@
 from typing import List
-from estado import Estado, SLR
 
 
 class Pilha:
   __pilha: List
 
-  def __init__(self, estadoInicial: Estado) -> None:
+  def __init__(self, estadoInicial: int) -> None:
     self.__pilha = [estadoInicial]
   
-  def inserir(self, estado: Estado):
+  def inserir(self, estado: int):
     self.__pilha.append(estado)
 
-  def remover(self) -> Estado:
+  def remover(self) -> int:
     return self.__pilha.pop()
 
-  def topo(self) -> Estado:
+  def topo(self) -> int:
     return self.__pilha[-1]
