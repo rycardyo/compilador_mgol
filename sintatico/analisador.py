@@ -20,6 +20,7 @@ def analisador(SCANNER):
   while 1:
     estadoAtual = pilha.topo()
     entrada = token['classe']
+    print(entrada)
     estado = mapaTransicoes.shiftReduceError[estadoAtual][entrada]
 
     if estado["acao"].value == Acoes.SHIFT.value:
@@ -38,7 +39,7 @@ def analisador(SCANNER):
       print('TOKEN: {}'.format(token))
       #rotina de erro
       print('Rotina de erro invocada')
-      pilha,SCANNER = recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).panic_mode(token)
+      pilha, token = recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).panic_mode(token)
       if pilha == None:
         print('Recuperacao falhou...')
         break

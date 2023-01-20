@@ -29,7 +29,7 @@ class recovery():
                 print('AÇÃO: {}'.format(acao.value))
                 if acao.value != Acoes.ERROR.value:
                     # retorno pode ser o scanner, necessario testar
-                    return recovery_stack, self.scanner
+                    return recovery_stack, token
                 recovery_stack.remover()
             # avaliar variaveis globais da classe (scanner e arquivo)    
             token = self.scanner(self.arquivo)
