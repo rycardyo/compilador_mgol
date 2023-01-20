@@ -8,12 +8,12 @@ from tokenLexico import Token
 from scanner import SCANNER
 from pilha import Pilha
 from mapaTransicoes import MapaTransicoes, Acoes
+from error_recovery import recovery
 
-
-def analisador():
+def analisador(SCANNER):
   pilha = Pilha(0)
   mapaTransicoes = MapaTransicoes()
-  caminho_arquivo: str = '{path}/teste.txt'.format(path=dirname(realpath(__file__)))
+  caminho_arquivo: str = '{path}/teste_error.txt'.format(path=dirname(realpath(__file__)))
   arquivo = open(caminho_arquivo, 'r')
 
   token: Token = SCANNER(arquivo)
@@ -35,8 +35,16 @@ def analisador():
     elif estado["acao"].value == Acoes.ACCEPT.value:
         break
     else:
+      print('TOKEN: {}'.format(token))
       #rotina de erro
+      print('Rotina de erro invocada')
+      pilha,SCANNER = recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).panic_mode(token)
+      if pilha == None:
+        print('Recuperacao falhou...')
+        break
+      else:
+        print('rotina funcionou')
       pass
   arquivo.close()
 
-analisador()
+analisador(SCANNER)

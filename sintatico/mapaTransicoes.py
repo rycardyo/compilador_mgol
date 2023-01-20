@@ -13,7 +13,7 @@ class MapaTransicoes:
     self.shiftReduceError = {}
     self.goto = {}
 
-    caminhoShiftReduce: str = '{path}/Shift-Reduce.csv'.format(path=dirname(realpath(__file__)))
+    caminhoShiftReduce: str = '{path}/Shift-Reduce_2.csv'.format(path=dirname(realpath(__file__)))
     with open(caminhoShiftReduce, 'r') as shiftReduceCSV:
       reader = csv.DictReader(shiftReduceCSV)
       for estado, simbolos in enumerate(reader):

@@ -1,6 +1,5 @@
 from typing import List
 
-
 class Pilha:
   __pilha: List
 
@@ -15,3 +14,7 @@ class Pilha:
 
   def topo(self) -> int:
     return self.__pilha[-1]
+
+  
+  def len(self) -> int:
+    return len(self.__pilha)
