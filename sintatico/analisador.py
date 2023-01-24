@@ -10,7 +10,7 @@ from pilha import Pilha
 from mapaTransicoes import MapaTransicoes, Acoes
 from error_recovery import recovery
 
-def analisador(SCANNER):
+def analisador():
   pilha = Pilha(0)
   mapaTransicoes = MapaTransicoes()
   caminho_arquivo: str = '{path}/teste_error.txt'.format(path=dirname(realpath(__file__)))
@@ -48,4 +48,4 @@ def analisador(SCANNER):
       pass
   arquivo.close()
 
-analisador(SCANNER)
+analisador()
