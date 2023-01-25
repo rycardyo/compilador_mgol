@@ -3,8 +3,7 @@ varinicio
 literal A;
 inteiro B, D;
 real C;
-
-Escreva "Digite B:";
+escreva "Digite B:";
 leia B;
 escreva "Digite A:";
 leia A;
