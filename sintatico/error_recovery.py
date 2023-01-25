@@ -19,12 +19,33 @@ class Recovery():
         self.scanner = scanner
         self.arquivo = arquivo
         self.mapaTransicoes = mapaTransicoes
-         
+        self.estado_erro = self.mapaTransicoes[self.parser_stack.topo(), self.token]
+        self.self.tokens_candidatos = self.estado_erro['tokens']
+        
     
     def local_recovery(self, token : str, parser_stack : Pilha):
         # minimal distance = 2
         distance = 2
         self.token = token
+
+        acoes = [self.concatena, self.remove_token, self.insere_terminal_antes, 
+                    self.substitui_por_terminal, self.insere_nao_terminal_antes, self.substitui_por_nao_terminal]
+
+        mapeia_acoes = {
+            0 : 'concat',
+            1 : 'remove',
+            2 : 'insere_terminal',
+            3 : 'substitui_por_terminal',
+            4 : 'insere_nao_terminal',
+            5 : 'substitui por nao_terminal'
+        }        
+        for acao in acoes:
+            result = acao()
+            if result[0] >= distance:
+                acao_realizada = result[1]
+                break
+        print(acao_realizada)
+
         def minimal_distance(self, value : int, token : str, tipo : str = 'remocao', scan : SCANNER = None) -> int:
             copy_scan = copy.deepcopy(self.scanner) if scan == None else scan
             recovery_stack = copy.deepcopy(parser_stack)
@@ -43,7 +64,7 @@ class Recovery():
 
        # Mescla o token atual como proximo e calcula minimal distance
        # Verificar se faz sentido...
-        def testa_candidatos(self, candidatos : list, tipo_teste = 'remocao') -> int:
+        def testa_candidatos(self, candidatos : list, tipo_teste = 'remocao'):
             candidatos_aceitos = []
             levenshtein = []
             for item in candidatos:
@@ -57,36 +78,42 @@ class Recovery():
 
         # Nao utilizada
         def concatena(self):
+            id_action = 0
             copy_scan = copy.deepcopy(self.scanner)
             t1 = token["lexema"]
             t2 = copy_scan()["lexema"]
             token_concat = t1 + t2
             
-            return self.minimal_distance(distance, token_concat, tipo = 'remocao', scan = copy_scan)
+            return (self.minimal_distance(distance, token_concat, tipo = 'remocao', scan = copy_scan), id_action)
 
         # Remove o token atual e verifica se o parser aceita
-        def remove_token(self): 
+        def remove_token(self) -> tuple: 
+            id_action = 1
             recovery_stack = copy.deepcopy(parser_stack)
             token = copy.deepcopy(self.scanner)
             entrada = token['classe']
             
-            return self.minimal_distance(distance, entrada) 
+            return (self.minimal_distance(distance, entrada), id_action)
 
         # Inserir cada candidato terminal antes o simbolo atual
-        def insere_terminal_antes(self) -> str:
-            return testa_candidatos(tokens_candidatos, 'insercao')
+        def insere_terminal_antes(self) -> tuple:
+            id_action = 2
+            return (testa_candidatos(self.tokens_candidatos, 'insercao'), id_action)
 
         # substituir atual por cada candidato terminal        
-        def substitui_por_terminal(self) -> str:
-            return self.testa_candidatos(tokens_candidatos, 'remocao')
+        def substitui_por_terminal(self) -> tuple:
+            id_action = 3
+            return (self.testa_candidatos(self.tokens_candidatos, 'remocao'), id_action)
         
         # inserção de nao terminais antes
-        def insere_nao_terminal_antes(self) -> str:
-            return testa_candidatos(tokens_candidatos, 'insercao')
+        def insere_nao_terminal_antes(self) -> tuple:
+            id_action = 4
+            return (testa_candidatos(self.tokens_candidatos, 'insercao'), id_action)
 
         # Substituir um candidato nao terminal por t1
-       def substitui_por_nao_terminal(self) -> str:
-           return self.testa_candidatos(tokens_candidatos, 'remocao')
+        def substitui_por_nao_terminal(self) -> tuple:
+           id_action = 5
+           return (self.testa_candidatos(self.tokens_candidatos, 'remocao'), id_action)
 
 
     
