@@ -53,7 +53,7 @@ class MapaTransicoes:
               codigo = comando[1]
               self.shiftReduceError[estado][simbolo] = {
                 "acao": Acoes.ERROR,
-                "codigo": int(codigo),
+                "codigo": int(codigo)
               }
             else:
               raise Exception("Erro desconhecido")

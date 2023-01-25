@@ -19,9 +19,9 @@ class Recovery():
         self.scanner = scanner
         self.arquivo = arquivo
         self.mapaTransicoes = mapaTransicoes
-        self.estado_erro = self.mapaTransicoes[self.parser_stack.topo(), self.token]
-        self.self.tokens_candidatos = self.estado_erro['tokens']
-        
+        self.estado_erro = mapaTransicoes.shiftReduceError[self.parser_stack.topo()]
+        self.tokens_candidatos = self.estado_erro['codigo']
+        self.panic_mode(self.token)
     
     def local_recovery(self, token : str, parser_stack : Pilha):
         # minimal distance = 2

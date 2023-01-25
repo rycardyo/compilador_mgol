@@ -8,7 +8,7 @@ from tokenLexico import Token
 from scanner import SCANNER
 from pilha import Pilha
 from mapaTransicoes import MapaTransicoes, Acoes
-from error_recovery import recovery
+from error_recovery import Recovery
 
 def analisador():
   pilha = Pilha(0)
@@ -39,7 +39,7 @@ def analisador():
       print('TOKEN: {}'.format(token))
       #rotina de erro
       print('Rotina de erro invocada')
-      pilha, token = recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).panic_mode(token)
+      pilha, token = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).panic_mode(token)
       if pilha == None:
         print('Recuperacao falhou...')
         break
