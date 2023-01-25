@@ -55,10 +55,21 @@ class Scan:
 
       elif token["classe"] == Classes.ERRO.value:
         if erro == ErrosLexicos.CARACTERE_INVALIDO.value:
-          mensagem_erro = "ERRO LÉXICO - Caractere inválido, linha {num_linha}, coluna {num_coluna}".format(num_linha = self.num_linha, num_coluna = self.num_coluna)
+          mensagem_erro = "ERRO LÉXICO - Caractere inválido, linha {num_linha}, coluna {num_coluna}: {caractere}" \
+            .format(num_linha = self.num_linha, num_coluna = self.num_coluna, caractere = lexema)
           self.ler_proximo_caractere()
         elif erro == ErrosLexicos.LEXEMA_MAL_FORMADO.value:
-          mensagem_erro = "ERRO LÉXICO - Lexema mal formado, linha {num_linha}, coluna {num_coluna}".format(num_linha = self.num_linha, num_coluna = self.num_coluna - 1)
+          mensagem_erro = "ERRO LÉXICO - Lexema mal formado, linha {num_linha}, coluna {num_coluna}: Recebido {lexema}" \
+            .format(num_linha = self.num_linha, num_coluna = self.num_coluna - 1, lexema = lexema)
+        elif erro == ErrosLexicos.LEXEMA_MAL_FORMADO_REAL.value:
+          mensagem_erro = "ERRO LÉXICO - Lexema mal formado, linha {num_linha}, coluna {num_coluna}: Recebido {lexema}, esperado número real. Remova o ponto ou insira um número depois dele. Exemplo: 1 | 1.1" \
+            .format(num_linha = self.num_linha, num_coluna = self.num_coluna - 1, lexema = lexema)
+        elif erro == ErrosLexicos.LEXEMA_MAL_FORMADO_EXP.value:
+          mensagem_erro = "ERRO LÉXICO - Lexema mal formado, linha {num_linha}, coluna {num_coluna}: Recebido {lexema}, esperado número real com expoente. Remova a exponencial ou insira um número com ou sem sinal depois dela. Exemplo: 1 | 1e1 | 1e-1 | 1e+1" \
+            .format(num_linha = self.num_linha, num_coluna = self.num_coluna - 1, lexema = lexema)
+        elif erro == ErrosLexicos.LEXEMA_MAL_FORMADO_EXP_SINAL.value:
+          mensagem_erro = "ERRO LÉXICO - Lexema mal formado, linha {num_linha}, coluna {num_coluna}: Recebido {lexema}, esperado número real com expoente. Remova a exponencial com o sinal ou insira um número depois deles. Exemplo: 1 | 1e1 | 1e-1 | 1e+1" \
+            .format(num_linha = self.num_linha, num_coluna = self.num_coluna - 1, lexema = lexema)
         elif erro == ErrosLexicos.LITERAL_INCOMPLETA.value:
           mensagem_erro = "ERRO LÉXICO - Literal não fechada, linha {num_linha}, coluna {num_coluna}".format(num_linha = self.num_linha, num_coluna = self.num_coluna - 1)
         elif erro == ErrosLexicos.COMENTARIO_INCOMPLETO.value:

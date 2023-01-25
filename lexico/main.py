@@ -16,7 +16,7 @@ def main():
     token = SCANNER(arquivo)
     print("Token reconhecido", token)
 
-  print("saiu", token['classe']), 
+  print("saiu", token['classe']),
   arquivo.close()
 
 main()

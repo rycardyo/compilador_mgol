@@ -215,12 +215,20 @@ class AFD():
 
         if not self.estado_atual.final:
             erro_estado_inicial = self.estado_atual == self._estados[0]
+            estado_erro = self.estado_atual.id
             self.estado_atual = self._estados[27]
 
             if erro_estado_inicial:
                 return True, entrada, ErrosLexicos.CARACTERE_INVALIDO.value
             else:
-                return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO.value
+                if estado_erro == 2:
+                    return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO_REAL.value
+                elif estado_erro == 4:
+                    return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO_EXP.value
+                elif estado_erro == 5:
+                    return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO_EXP_SINAL.value
+                else:
+                    return True, self.caminho_percorrido, ErrosLexicos.LEXEMA_MAL_FORMADO.value
 
         return True, self.caminho_percorrido, None
 
