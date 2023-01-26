@@ -8,14 +8,14 @@ escreva "Digite B:";
 leia B;
 escreva "Digite A:";
 leia A;
-se(B>2)
+7se(B>2
+etao
+se(B<=4)
 entao
-se(B<=4) )
-entao(
-escreva "B esta entre 2 e 4";
+ "B esta entre 2 e 4";
 fimse
 fimse
-B<-B+1;
+B<-B+fa;
 B<-B+2;
 B<-B+3;
 D<-B;
@@ -24,6 +24,6 @@ escreva "\nB=\n";
 escreva D;
 escreva "\n";
 escreva C;
-escreva "\n";
-escreva A;
+escreva "\n"
+7_escrevaA; 7%8
 fim

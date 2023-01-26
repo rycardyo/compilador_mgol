@@ -3,7 +3,7 @@ from os.path import realpath, dirname
 
 path = '{path}/../lexico'.format(path=dirname(realpath(__file__)))
 sys.path.insert(0, path)
-
+import copy
 from tokenLexico import Token
 from scanner import SCANNER
 from pilha import Pilha
@@ -70,16 +70,17 @@ def analisador():
         del tokens_esperados_temp
         if posicao_ultimo_erro != posicao:
           print('Erro na linha {} coluna {}, ao identificar o token "{}", eram esperados um dos tokens"{}"'.format(posicao[0],posicao[1],token['lexema'], tokens_esperados))
-        
-        token, pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes, posicao, posicao_ultimo_erro).recovery_token
+
+        token, pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes, posicao, posicao_ultimo_erro, caminho_arquivo).recovery_token
         posicao_ultimo_erro = posicao
-        print('token novo{}'.format(token))
+       
         if token == None or token == 0:
           print('Recuperacao falhou...')
           break
         else:
           pass
     else:
+
       token, posicao = SCANNER(arquivo)
   arquivo.close()
   map_lexemas = {
