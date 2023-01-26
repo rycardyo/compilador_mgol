@@ -82,8 +82,9 @@ class Scan:
           tabelaSimbolos.inserir(token)
         else:
           token = token_existente
-
-      return token, (self.num_linha, self.num_coluna)
+      token.update({"num_linha": self.num_linha})
+      token.update({"num_coluna": self.num_coluna})
+      return token
 
 scan = Scan()
 def SCANNER(arquivo) -> Token:
