@@ -21,6 +21,7 @@ class Scan:
     self.arquivo = None
     self.caractere = ' '
     self.afd = afd.AFD()
+    
 
   def ler_proximo_caractere(self):
     if self.caractere in ['\n', '\r']:

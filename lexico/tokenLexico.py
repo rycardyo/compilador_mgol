@@ -27,3 +27,4 @@ class Token(TypedDict):
   classe: Classes
   lexema: str
   tipo: Optional[Tipos]
+

@@ -31,7 +31,6 @@ class Recovery():
             self.recovery_token = self.panic_mode()
     
 
-        
     def panic_mode(self):
         _token = self.token
         cont = 0
@@ -59,7 +58,10 @@ class Recovery():
         acoes = [self.concatena,self.remove_token, self.insere_terminal_antes, self.substitui_por_terminal]
 
         ok = False
+        cont = 0
         for acao in acoes:
+            print('testando regra {}'.format(cont))
+            cont = cont + 1
             result = acao()
            
             if result[0] != 0:
@@ -75,7 +77,7 @@ class Recovery():
     def run_local_recovery(self, chosen_action):
         id_action = chosen_action[1]
         token_action = chosen_action[0]
-        
+        print("Regra escolhida : {}".format(id_action))
         if id_action == 0:
             if self.imprime:
                 print('Era esperado: {}'.format(token_action))
@@ -88,10 +90,10 @@ class Recovery():
             return token_action, self.parser_stack
         
         elif id_action == 2:
-            self.altera_pilha(token_action['classe'])
+            new_token = self.altera_pilha(token_action['classe'])
             if self.imprime:
                 print('Era esperado o token {} antes de {}'.format(token_action, self.token))
-            return token_action, self.parser_stack
+            return new_token, self.parser_stack
         
         elif id_action == 3:
             if self.imprime:
@@ -99,17 +101,21 @@ class Recovery():
             return token_action, self.parser_stack
      
 
-    def altera_pilha(self, token : str) -> None:
+    def altera_pilha(self, token : str) -> dict:
         estado_atual = self.mapaTransicoes.shiftReduceError[self.parser_stack.topo()][token]
+        new_token = {'classe' : '', 'lexema' : ''}        
         if estado_atual["acao"].value == Acoes.SHIFT.value:
             self.parser_stack.inserir(estado_atual["estado"])
+          
+            new_token['classe'] = self.token['classe']
 
         elif estado_atual["acao"].value == Acoes.REDUCE.value:
             for estadoEmpilhado in estado_atual["direita"]:
                 self.parser_stack.remover()
             self.parser_stack.inserir(self.mapaTransicoes.goto[self.parser_stack.topo()][estado_atual["esquerda"]])
-                
-            
+            new_token['classe'] = token
+        return new_token
+
     def minimal_distance(self, limite : int, token : str, tipo : str = 'remocao', scan : SCANNER = None) -> int:
         copy_scan = copy.deepcopy(self.scanner) if scan == None else scan
         recovery_stack = copy.deepcopy(self.parser_stack)
@@ -117,17 +123,16 @@ class Recovery():
         cont = 0 if tipo == 'remocao' else -1   
         
         while cont <= limite:
-
             estado_atual = self.mapaTransicoes.shiftReduceError[recovery_stack.topo()][entrada]
             if estado_atual["acao"].value == Acoes.SHIFT.value:
                 recovery_stack.inserir(estado_atual["estado"])
                 entrada = copy_scan(self.arquivo)[0]['classe'] if cont > 0 else self.token['classe']
                 cont = cont + 1
-            
+                
             elif estado_atual["acao"].value == Acoes.REDUCE.value:
                 for estadoEmpilhado in estado_atual["direita"]:
                     recovery_stack.remover()
-                  
+                
                 recovery_stack.inserir(self.mapaTransicoes.goto[recovery_stack.topo()][estado_atual["esquerda"]])
                 cont = cont + 1
             
@@ -135,7 +140,7 @@ class Recovery():
                 return limite                    
             else:
                 return cont
-        
+           
         return cont
 
 
@@ -148,10 +153,10 @@ class Recovery():
             if self.minimal_distance(self.distance, item, tipo = tipo_teste) >= self.distance:
                 candidatos_aceitos.append(item)
                 levenshtein.append(utils.levenshtein(item, self.token))
+       
         if len(candidatos_aceitos) > 0:
-            _token = {'classe' : candidatos_aceitos[np.argmax(levenshtein)],
+            _token = {'classe' : candidatos_aceitos[np.argmin(levenshtein)],
                     'lexema' : ''}
-
             return _token
         else:
             return 0
@@ -160,8 +165,8 @@ class Recovery():
     def concatena(self):
         id_action = 0
         copy_scan = copy.deepcopy(self.scanner)
-        t1 = self.token["lexema"]
         
+        t1 = self.token["lexema"]
         t2 = copy_scan(self.arquivo)[0]["lexema"]
         if len(t2) > 0:
             _afd = afd.AFD()
@@ -175,9 +180,13 @@ class Recovery():
                 "lexema": lexema,
                 "tipo": _afd.estado_atual.token_type.value,
                 }
-            custo = self.minimal_distance(self.distance, token_concat['classe'], tipo = 'remocao', scan = copy_scan) 
-            if token_concat['classe'] != "ERRO" and custo >= self.distance:
-                return (token_concat, id_action)
+            if token_concat['classe'] != "ERRO": 
+                custo = self.minimal_distance(self.distance, token_concat['classe'], tipo = 'remocao', scan = copy_scan) 
+                print('teste r1 realizado')
+                if custo >= self.distance:
+                    return (token_concat, id_action)
+                else:
+                    return (0,id_action)
             else:
                 return (0,id_action)
         else:
@@ -187,10 +196,13 @@ class Recovery():
     def remove_token(self) -> tuple: 
         id_action = 1
         recovery_stack = copy.deepcopy(self.parser_stack)
-        _token = copy.deepcopy(self.scanner)(self.arquivo)[0]
+        _token, posicao = SCANNER(self.arquivo)
         entrada = 0
-
-        if self.minimal_distance(self.distance, _token['classe']) >= self.distance:
+        print('PROXIMO TOKEN {}'.format(_token)) 
+        print(posicao)
+        score = self.minimal_distance(self.distance, _token['classe'])
+        print('PROXIMO TOKEN {}'.format(_token)) 
+        if score >= self.distance:
             entrada = _token
         
         return (entrada, id_action)
