@@ -72,7 +72,7 @@ class Scan:
         else:
           token = token_existente
 
-      return token
+      return token, (self.num_linha, self.num_coluna)
 
 scan = Scan()
 def SCANNER(arquivo) -> Token:

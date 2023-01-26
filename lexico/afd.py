@@ -241,3 +241,6 @@ class AFD():
     def volta_inicio(self):
         self.estado_atual = self._estados[0]
         self.caminho_percorrido = ""
+
+    def reverse(self, token_class):
+        estados_finais = [x for x in self._estados if x.final == True]
