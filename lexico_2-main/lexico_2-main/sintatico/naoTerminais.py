@@ -1,0 +1,20 @@
+from enum import Enum
+
+class NaoTerminais(Enum):
+  P_I = "P\'"
+  P = "P"
+  V = "V"
+  LV = "LV"
+  D = "D"
+  L = "L"
+  TIPO = "TIPO"
+  A = "A"
+  ES = "ES"
+  ARG = "ARG"
+  CMD = "CMD"
+  LD = "LD"
+  OPRD = "OPRD"
+  COND = "COND"
+  CAB = "CAB"
+  EXP_R = "EXP_R"
+  CP = "CP"
