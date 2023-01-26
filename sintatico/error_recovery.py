@@ -66,7 +66,6 @@ class Recovery():
                 break
             else:
                 continue
-       
         if ok:
             return self.run_local_recovery(result)
         else:
