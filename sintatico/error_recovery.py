@@ -4,12 +4,13 @@ from os.path import realpath, dirname
 path = '{path}/../lexico'.format(path=dirname(realpath(__file__)))
 sys.path.insert(0, path)
 
-from mapaTransicoes import MapaTransicoes, Acoes
+from mapaTransicoes import Acoes
 import copy 
 from pilha import Pilha
 from scanner import SCANNER
 from enchant import utils
 import numpy as np
+import afd
 
 class Recovery():   
     def __init__(self, parser_stack : Pilha, token : str, scanner : SCANNER,
@@ -20,124 +21,192 @@ class Recovery():
         self.arquivo = arquivo
         self.mapaTransicoes = mapaTransicoes
         self.estado_erro = mapaTransicoes.shiftReduceError[self.parser_stack.topo()]
-        self.tokens_candidatos = self.estado_erro['codigo']
-        self.panic_mode(self.token)
+        self.terminais_candidatos = [x for x in self.estado_erro if self.estado_erro[x]['acao'].value != Acoes.ERROR.value]  
+        self.distance = 8
+        self.recovery_token = self.local_recovery()
+        if self.recovery_token == 0: 
+            print('LOCAL FALHOU...')
+            self.recovery_token = self.panic_mode()
     
-    def local_recovery(self, token : str, parser_stack : Pilha):
-        # minimal distance = 2
-        distance = 2
-        self.token = token
 
-        acoes = [self.concatena, self.remove_token, self.insere_terminal_antes, 
-                    self.substitui_por_terminal, self.insere_nao_terminal_antes, self.substitui_por_nao_terminal]
-
-        mapeia_acoes = {
-            0 : 'concat',
-            1 : 'remove',
-            2 : 'insere_terminal',
-            3 : 'substitui_por_terminal',
-            4 : 'insere_nao_terminal',
-            5 : 'substitui por nao_terminal'
-        }        
-        for acao in acoes:
-            result = acao()
-            if result[0] >= distance:
-                acao_realizada = result[1]
-                break
-        print(acao_realizada)
-
-        def minimal_distance(self, value : int, token : str, tipo : str = 'remocao', scan : SCANNER = None) -> int:
-            copy_scan = copy.deepcopy(self.scanner) if scan == None else scan
-            recovery_stack = copy.deepcopy(parser_stack)
-            entrada = token
-            cont = 0 if tipo == 'remocao' else -1   
-            while cont <= value:
-                estado_atual = recovery_stack.topo()
-                acao = self.mapaTransicoes.shiftReduceError[estado_atual][entrada]['acao']
-                if acao.value != Acoes.ERROR.value:
-                    cont = cont + 1
-                    entrada = copy_scan()['classe'] if cont > 0 else self.token
-                else:
-                    return cont
-            return cont
-
-
-       # Mescla o token atual como proximo e calcula minimal distance
-       # Verificar se faz sentido...
-        def testa_candidatos(self, candidatos : list, tipo_teste = 'remocao'):
-            candidatos_aceitos = []
-            levenshtein = []
-            for item in candidatos:
-                if self.minimal_distance(distance, item, tipo = tipo_teste) >= distance:
-                    candidatos_aceitos.append(item)
-                    levenshtein.append(utils.levenshtein(item, self.token))
-            if len(candidatos_aceitos) > 0:
-                return candidatos_aceitos[np.argmax(levenshtein)]
-            else:
-                return 0
-
-        # Nao utilizada
-        def concatena(self):
-            id_action = 0
-            copy_scan = copy.deepcopy(self.scanner)
-            t1 = token["lexema"]
-            t2 = copy_scan()["lexema"]
-            token_concat = t1 + t2
-            
-            return (self.minimal_distance(distance, token_concat, tipo = 'remocao', scan = copy_scan), id_action)
-
-        # Remove o token atual e verifica se o parser aceita
-        def remove_token(self) -> tuple: 
-            id_action = 1
-            recovery_stack = copy.deepcopy(parser_stack)
-            token = copy.deepcopy(self.scanner)
-            entrada = token['classe']
-            
-            return (self.minimal_distance(distance, entrada), id_action)
-
-        # Inserir cada candidato terminal antes o simbolo atual
-        def insere_terminal_antes(self) -> tuple:
-            id_action = 2
-            return (testa_candidatos(self.tokens_candidatos, 'insercao'), id_action)
-
-        # substituir atual por cada candidato terminal        
-        def substitui_por_terminal(self) -> tuple:
-            id_action = 3
-            return (self.testa_candidatos(self.tokens_candidatos, 'remocao'), id_action)
         
-        # inserção de nao terminais antes
-        def insere_nao_terminal_antes(self) -> tuple:
-            id_action = 4
-            return (testa_candidatos(self.tokens_candidatos, 'insercao'), id_action)
-
-        # Substituir um candidato nao terminal por t1
-        def substitui_por_nao_terminal(self) -> tuple:
-           id_action = 5
-           return (self.testa_candidatos(self.tokens_candidatos, 'remocao'), id_action)
-
-
-    
-    # pendencias: escrever tipagem
-    # verificar ancoras
-    
-    def panic_mode(self,token):
-        print('Token que disparou o erro: {}'.format(token))
-        while token['classe'] != '$':
-            print('Token Atual: {}'.format(token))
+    def panic_mode(self):
+        print('Token que disparou o erro: {}'.format(self.token))
+        _token = self.token
+        cont = 0
+        while _token['classe'] != '$':
             recovery_stack = copy.deepcopy(self.parser_stack)
-            print('Pilha: {}'.format(recovery_stack.len()))
-            entrada = token['classe']
+            entrada = _token['classe']
             while recovery_stack.len() > 0:
                 estadoAtual = recovery_stack.topo()
-                print('Estado no topo: {}'.format(estadoAtual))
                 acao = self.mapaTransicoes.shiftReduceError[estadoAtual][entrada]['acao']
-                print('AÇÃO: {}'.format(acao.value))
                 if acao.value != Acoes.ERROR.value:
                     # retorno pode ser o scanner, necessario testar
-                    return recovery_stack, token
+                    self.parser_stack = recovery_stack
+                    return _token, self.parser_stack
+                cont = cont + 1
                 recovery_stack.remover()
             # avaliar variaveis globais da classe (scanner e arquivo)    
-            token = self.scanner(self.arquivo)
-        return None, None
+            _token = self.scanner(self.arquivo)[0]
+        return None,None
 
+
+    def local_recovery(self):
+        # minimal distance = 2
+        distance = 2
+
+        acoes = [self.concatena,self.remove_token, self.insere_terminal_antes, self.substitui_por_terminal]
+
+        ok = False
+        for acao in acoes:
+            result = acao()
+           
+            if result[0] != 0:
+                ok = True
+                break
+            else:
+                continue
+       
+        if ok:
+            return self.run_local_recovery(result)
+        else:
+            return 0
+        
+    def run_local_recovery(self, chosen_action):
+        id_action = chosen_action[1]
+        token_action = chosen_action[0]
+        
+        if id_action == 0:
+            print('Era esperado: {}'.format(token_action))
+            return token_action, self.parser_stack
+        
+        elif id_action == 1:
+            self.scanner(self.arquivo)[0]
+            print('O token {} não era esperado'.format(token_action))
+            return token_action, self.parser_stack
+        
+        elif id_action == 2:
+            self.altera_pilha(token_action['classe'])
+            print(token_action)
+            print('Era esperado o token {} antes de {}'.format(token_action, self.token))
+            return token_action, self.parser_stack
+        
+        elif id_action == 3:
+            print('Era esperado o token {} ao inves de {}'.format(token_action, self.token))
+            return token_action, self.parser_stack
+     
+
+    def altera_pilha(self, token : str) -> None:
+        estado_atual = self.mapaTransicoes.shiftReduceError[self.parser_stack.topo()][token]
+        if estado_atual["acao"].value == Acoes.SHIFT.value:
+            self.parser_stack.inserir(estado_atual["estado"])
+
+        elif estado_atual["acao"].value == Acoes.REDUCE.value:
+            for estadoEmpilhado in estado_atual["direita"]:
+                self.parser_stack.remover()
+            self.parser_stack.inserir(self.mapaTransicoes.goto[self.parser_stack.topo()][estado_atual["esquerda"]])
+                
+            
+    def minimal_distance(self, limite : int, token : str, tipo : str = 'remocao', scan : SCANNER = None) -> int:
+        copy_scan = copy.deepcopy(self.scanner) if scan == None else scan
+        recovery_stack = copy.deepcopy(self.parser_stack)
+        entrada = token
+        cont = 0 if tipo == 'remocao' else -1   
+        
+        while cont <= limite:
+
+            estado_atual = self.mapaTransicoes.shiftReduceError[recovery_stack.topo()][entrada]
+            if estado_atual["acao"].value == Acoes.SHIFT.value:
+                recovery_stack.inserir(estado_atual["estado"])
+                entrada = copy_scan(self.arquivo)[0]['classe'] if cont > 0 else self.token['classe']
+                cont = cont + 1
+            
+            elif estado_atual["acao"].value == Acoes.REDUCE.value:
+                for estadoEmpilhado in estado_atual["direita"]:
+                    recovery_stack.remover()
+                  
+                recovery_stack.inserir(self.mapaTransicoes.goto[recovery_stack.topo()][estado_atual["esquerda"]])
+                cont = cont + 1
+            
+            elif estado_atual["acao"].value == Acoes.ACCEPT.value:
+                return limite                    
+            else:
+                return cont
+        
+        return cont
+
+
+    # Mescla o token atual como proximo e calcula minimal distance
+    # Verificar se faz sentido...
+    def testa_candidatos(self, candidatos : list, tipo_teste = 'remocao'):
+        candidatos_aceitos = []
+        levenshtein = []
+        for item in candidatos:
+            if self.minimal_distance(self.distance, item, tipo = tipo_teste) >= self.distance:
+                candidatos_aceitos.append(item)
+                levenshtein.append(utils.levenshtein(item, self.token))
+        if len(candidatos_aceitos) > 0:
+            _token = {'classe' : candidatos_aceitos[np.argmax(levenshtein)],
+                    'lexema' : ''}
+
+            return _token
+        else:
+            return 0
+
+    # Nao utilizada
+    def concatena(self):
+        id_action = 0
+        copy_scan = copy.deepcopy(self.scanner)
+        t1 = self.token["lexema"]
+        
+        t2 = copy_scan(self.arquivo)[0]["lexema"]
+        if len(t2) > 0:
+            _afd = afd.AFD()
+            token_concat = t1 + t2
+            lexema = ''
+            for c in token_concat:
+                _, lexema, _ = _afd.transicao(c)
+
+            token_concat = { 
+                "classe": _afd.estado_atual.token_class.value,
+                "lexema": lexema,
+                "tipo": _afd.estado_atual.token_type.value,
+                }
+            print(token_concat)
+            custo = self.minimal_distance(self.distance, token_concat['classe'], tipo = 'remocao', scan = copy_scan) 
+            if token_concat['classe'] != "ERRO" and custo >= self.distance:
+                return (token_concat, id_action)
+            else:
+                return (0,id_action)
+        else:
+            return (0,id_action)
+
+    # Remove o token atual e verifica se o parser aceita
+    def remove_token(self) -> tuple: 
+        id_action = 1
+        recovery_stack = copy.deepcopy(self.parser_stack)
+        _token = copy.deepcopy(self.scanner)(self.arquivo)[0]
+        entrada = 0
+
+        if self.minimal_distance(self.distance, _token['classe']) >= self.distance:
+            entrada = _token
+        
+        return (entrada, id_action)
+
+    # Inserir cada candidato terminal antes o simbolo atual
+    def insere_terminal_antes(self) -> tuple:
+        id_action = 2
+        print(self.terminais_candidatos)
+        token_provavel = self.testa_candidatos(self.terminais_candidatos, 'insercao')
+        print(token_provavel)
+        return (token_provavel,id_action)
+         
+
+    # substituir atual por cada candidato terminal        
+    def substitui_por_terminal(self) -> tuple:
+        id_action = 3
+        return (self.testa_candidatos(self.terminais_candidatos, 'remocao'), id_action)
+    
+
+   
     

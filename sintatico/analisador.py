@@ -13,10 +13,13 @@ from error_recovery import Recovery
 def analisador():
   pilha = Pilha(0)
   mapaTransicoes = MapaTransicoes()
-  caminho_arquivo: str = '{path}/teste_error.txt'.format(path=dirname(realpath(__file__)))
+  caminho_arquivo: str = '{path}/teste.txt'.format(path=dirname(realpath(__file__)))
   arquivo = open(caminho_arquivo, 'r')
 
-  token: Token = SCANNER(arquivo)
+  token: Token
+  posicao: list
+  token, posicao = SCANNER(arquivo)
+  
   while 1:
     estadoAtual = pilha.topo()
     entrada = token['classe']
@@ -25,7 +28,8 @@ def analisador():
 
     if estado["acao"].value == Acoes.SHIFT.value:
       pilha.inserir(estado["estado"])
-      token = SCANNER(arquivo)
+      token, posicao = SCANNER(arquivo)
+
     elif estado["acao"].value == Acoes.REDUCE.value:
       for estadoEmpilhado in estado["direita"]:
         pilha.remover()
@@ -39,11 +43,16 @@ def analisador():
       print('TOKEN: {}'.format(token))
       #rotina de erro
       print('Rotina de erro invocada')
-      pilha, token = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).panic_mode(token)
-      if pilha == None:
+      print('Erro em {}'.format(posicao[1]))
+      print(pilha.topo())
+      _token, _pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).recovery_token
+      
+      if _token == None or _token == 0:
         print('Recuperacao falhou...')
         break
       else:
+        pilha = _pilha
+        token = _token
         print('rotina funcionou')
       pass
   arquivo.close()
