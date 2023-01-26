@@ -34,7 +34,7 @@ def analisador():
 
     elif estado["acao"].value == Acoes.ACCEPT.value:
         pilha.remover()
-        print("Redução: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
+        print("Aceita: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
         break
     else:
       print('TOKEN: {}'.format(token))
