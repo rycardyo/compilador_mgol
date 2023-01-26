@@ -3,10 +3,7 @@ varinicio
 literal A;
 inteiro B, D;
 real C;
-<<<<<<< HEAD
-=======
 varfim;
->>>>>>> b72d2274e8fdf1d48d0d5fc7edb4b7d523ba627a
 escreva "Digite B:";
 leia B;
 escreva "Digite A:";

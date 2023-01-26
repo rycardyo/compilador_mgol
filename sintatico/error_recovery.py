@@ -14,24 +14,25 @@ import afd
 
 class Recovery():   
     def __init__(self, parser_stack : Pilha, token : str, scanner : SCANNER,
-                                arquivo, mapaTransicoes : dict) -> None:
+                                arquivo, mapaTransicoes : dict, posicao : tuple, posicao_ultimo_erro : tuple ) -> None:
         self.parser_stack = parser_stack
         self.token = token
         self.scanner = scanner
         self.arquivo = arquivo
         self.mapaTransicoes = mapaTransicoes
         self.estado_erro = mapaTransicoes.shiftReduceError[self.parser_stack.topo()]
+        
         self.terminais_candidatos = [x for x in self.estado_erro if self.estado_erro[x]['acao'].value != Acoes.ERROR.value]  
-        self.distance = 8
+        self.distance = 2
+        self.imprime = posicao != posicao_ultimo_erro
         self.recovery_token = self.local_recovery()
         if self.recovery_token == 0: 
-            print('LOCAL FALHOU...')
+            print('local_falhou')
             self.recovery_token = self.panic_mode()
     
 
         
     def panic_mode(self):
-        print('Token que disparou o erro: {}'.format(self.token))
         _token = self.token
         cont = 0
         while _token['classe'] != '$':
@@ -76,22 +77,25 @@ class Recovery():
         token_action = chosen_action[0]
         
         if id_action == 0:
-            print('Era esperado: {}'.format(token_action))
+            if self.imprime:
+                print('Era esperado: {}'.format(token_action))
             return token_action, self.parser_stack
         
         elif id_action == 1:
             self.scanner(self.arquivo)[0]
-            print('O token {} não era esperado'.format(token_action))
+            if self.imprime:
+                print('O token {} não era esperado'.format(token_action))
             return token_action, self.parser_stack
         
         elif id_action == 2:
             self.altera_pilha(token_action['classe'])
-            print(token_action)
-            print('Era esperado o token {} antes de {}'.format(token_action, self.token))
+            if self.imprime:
+                print('Era esperado o token {} antes de {}'.format(token_action, self.token))
             return token_action, self.parser_stack
         
         elif id_action == 3:
-            print('Era esperado o token {} ao inves de {}'.format(token_action, self.token))
+            if self.imprime:
+                print('Era esperado o token {} ao inves de {}'.format(token_action, self.token))
             return token_action, self.parser_stack
      
 
@@ -171,7 +175,6 @@ class Recovery():
                 "lexema": lexema,
                 "tipo": _afd.estado_atual.token_type.value,
                 }
-            print(token_concat)
             custo = self.minimal_distance(self.distance, token_concat['classe'], tipo = 'remocao', scan = copy_scan) 
             if token_concat['classe'] != "ERRO" and custo >= self.distance:
                 return (token_concat, id_action)
@@ -195,9 +198,7 @@ class Recovery():
     # Inserir cada candidato terminal antes o simbolo atual
     def insere_terminal_antes(self) -> tuple:
         id_action = 2
-        print(self.terminais_candidatos)
         token_provavel = self.testa_candidatos(self.terminais_candidatos, 'insercao')
-        print(token_provavel)
         return (token_provavel,id_action)
          
 

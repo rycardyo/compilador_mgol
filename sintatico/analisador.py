@@ -17,9 +17,20 @@ def analisador():
   arquivo = open(caminho_arquivo, 'r')
 
   token: Token
-  posicao: list
+  posicao: tuple
+  posicao_ultimo_erro : int
   token, posicao = SCANNER(arquivo)
-  
+  posicao_ultimo_erro = '*'
+  map_tokens = {
+      'LIT' : '"', 
+      'COMENTARIO':  ["{","}"],
+      'OPR' : [">", "<",  "="], 
+      'OPA' :  ["/","*","-","+"], 
+      'VIR' : ",",
+      'PT_V' : ";",
+      'AB_P' : "(",
+      'FC_P' : ")"
+}
   while 1:
     estadoAtual = pilha.topo()
     entrada = token['classe']
@@ -32,7 +43,7 @@ def analisador():
     elif estado["acao"].value == Acoes.REDUCE.value:
       for estadoEmpilhado in estado["direita"]:
         pilha.remover()
-
+    
       pilha.inserir(mapaTransicoes.goto[pilha.topo()][estado["esquerda"]])
       print("Redução: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
 
@@ -41,21 +52,30 @@ def analisador():
         print("Aceita: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
         break
     else:
-      print('TOKEN: {}'.format(token))
       #rotina de erro
-      print('Rotina de erro invocada')
-      print('Erro em {}'.format(posicao[1]))
-      print(pilha.topo())
-      _token, _pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes).recovery_token
+      estado_erro = mapaTransicoes.shiftReduceError[pilha.topo()]
+      tokens_esperados_temp = [x for x in estado_erro if estado_erro[x]['acao'].value != Acoes.ERROR.value] 
+      tokens_esperados = []
+      for x in tokens_esperados_temp:
+        if x in map_tokens:
+          tokens_esperados.append(map_tokens[x])
+        else:
+          tokens_esperados.append(x)
+      del tokens_esperados_temp
+      if posicao_ultimo_erro != posicao:
+        print('Erro na linha {} coluna {}, ao identificar o token "{}", eram esperados um dos tokens"{}"'.format(posicao[0],posicao[1],token['lexema'], tokens_esperados))
       
-      if _token == None or _token == 0:
+      token, pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes, posicao, posicao_ultimo_erro).recovery_token
+      posicao_ultimo_erro = posicao
+
+      if token == None or token == 0:
         print('Recuperacao falhou...')
         break
       else:
-        pilha = _pilha
-        token = _token
-        print('rotina funcionou')
-      pass
+        pass
   arquivo.close()
+  map_lexemas = {
+
+  }
 
 analisador()
