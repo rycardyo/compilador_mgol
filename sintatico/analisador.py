@@ -71,7 +71,7 @@ def analisador():
         if posicao_ultimo_erro != posicao:
           print('Erro na linha {} coluna {}, ao identificar o token "{}", eram esperados um dos tokens"{}"'.format(posicao[0],posicao[1],token['lexema'], tokens_esperados))
 
-        token, pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes, posicao, posicao_ultimo_erro, caminho_arquivo).recovery_token
+        token, pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes, posicao, posicao_ultimo_erro, caminho_arquivo, map_tokens).recovery_token
         posicao_ultimo_erro = posicao
        
         if token == None or token == 0:

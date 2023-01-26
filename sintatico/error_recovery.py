@@ -4,7 +4,7 @@ from os.path import realpath, dirname
 path = '{path}/../lexico'.format(path=dirname(realpath(__file__)))
 sys.path.insert(0, path)
 
-from mapaTransicoes import Acoes
+from mapaTransicoes import Acoes, MapaTransicoes
 import copy 
 from pilha import Pilha
 from scanner import SCANNER
@@ -16,8 +16,9 @@ from tabelaSimbolos import tabelaSimbolos
 
 class Recovery():   
     def __init__(self, parser_stack : Pilha, token : str, scanner : SCANNER,
-                                arquivo, mapaTransicoes : dict, posicao : tuple, posicao_ultimo_erro : tuple,
-                                caminho_arquivo : str ) -> None:
+                                arquivo, mapaTransicoes : MapaTransicoes, posicao : tuple, posicao_ultimo_erro : tuple,
+                                caminho_arquivo : str, map_tokens : dict ) -> None:
+        self.map_tokens = map_tokens
         self.parser_stack = parser_stack
         self.token = token
         self.scanner = scanner
@@ -26,8 +27,7 @@ class Recovery():
         self.estado_erro = mapaTransicoes.shiftReduceError[self.parser_stack.topo()]
         self.new_file = open(caminho_arquivo, "r").readlines()
         self.linha, self.coluna = posicao
-        self.terminais_candidatos = [x for x in self.estado_erro if self.estado_erro[x]['acao'].value 
-            != Acoes.ERROR.value]  
+        self.terminais_candidatos = [x for x in self.estado_erro if self.estado_erro[x]['acao'].value != Acoes.ERROR.value]  
         self.distance = 2
         self.posicao = posicao
         self.imprime = posicao != posicao_ultimo_erro
@@ -36,13 +36,15 @@ class Recovery():
         
         if self.recovery_token == 0: 
             self.recovery_token = self.panic_mode()
-    
+
+
     def gera_cadeia(self):
         arq = copy.deepcopy(self.new_file)
         arq = arq[self.linha - 1:]
         arq = ''.join(arq)
         arq = arq[self.coluna - 1:]
         self.cadeia = arq
+
 
     def panic_mode(self):
         _token = self.token
@@ -64,6 +66,7 @@ class Recovery():
             _token = self.scanner(self.arquivo)[0]
         return None,None
 
+
     def local_recovery(self):
         # minimal distance = 2
         distance = 2
@@ -82,33 +85,43 @@ class Recovery():
             return self.run_local_recovery(result)
         else:
             return 0
-        
+
+
     def run_local_recovery(self, chosen_action):
         id_action = chosen_action[1]
         token_action = chosen_action[0]
         if id_action == 0:
             if self.imprime:
-                print('Era esperado: {}'.format(token_action))
+                token_mensagem = self.map_tokens[token_action['classe']] if token_action['classe'] in self.map_tokens else token_action['classe'] 
+                print('Era esperado: "{}"'.format(token_mensagem))
             return token_action, self.parser_stack
         
         elif id_action == 1:
             self.scanner(self.arquivo)
             if self.imprime:
-                print('O token {} não era esperado'.format(token_action))
+                token_mensagem = self.map_tokens[token_action['classe']] if token_action['classe'] in self.map_tokens else token_action['classe']                 
+                print('O token "{}" não era esperado'.format(token_mensagem))
+            
             return token_action, self.parser_stack
         
         elif id_action == 2:
-
             new_token = self.altera_pilha(token_action['classe'])
             if self.imprime:
-                print('Era esperado o token {} antes de {}'.format(token_action, self.token))
+                token_mensagem = self.map_tokens[token_action['classe']] if token_action['classe'] in self.map_tokens else token_action['classe']                 
+                token_mensagem_2 = self.map_tokens[self.token['classe']] if self.token['classe'] in self.map_tokens else self.token['classe']                  
+
+                print('Era esperado o token "{}" antes de "{}"'.format(token_mensagem, token_mensagem_2))
             return new_token, self.parser_stack
         
         elif id_action == 3:
             if self.imprime:
-                print('Era esperado o token {} ao inves de {}'.format(token_action, self.token))
+                token_mensagem = self.map_tokens[token_action['classe']] if token_action['classe'] in self.map_tokens else token_action['classe']                 
+                token_mensagem_2 = self.map_tokens[self.token['classe']] if self.token['classe'] in self.map_tokens else self.token['classe']                 
+
+                print('Era esperado o token "{}" ao inves de "{}"'.format(token_mensagem, token_mensagem_2))
             return token_action, self.parser_stack
      
+
     def scanner_lexema(self, cadeia):
         lexema = ''
         _afd = afd.AFD()
@@ -127,19 +140,25 @@ class Recovery():
                 token = token_existente
         return token
 
+
     def altera_pilha(self, token : str) -> dict:
         estado_atual = self.mapaTransicoes.shiftReduceError[self.parser_stack.topo()][token]
-        new_token = {'classe' : '', 'lexema' : ''}        
+        new_token = {'classe' : '', 'lexema' : ''}      
+
         if estado_atual["acao"].value == Acoes.SHIFT.value:
             self.parser_stack.inserir(estado_atual["estado"])
             new_token = self.token
             return new_token
+        
         elif estado_atual["acao"].value == Acoes.REDUCE.value:
+        
             for estadoEmpilhado in estado_atual["direita"]:
                 self.parser_stack.remover()
+        
             self.parser_stack.inserir(self.mapaTransicoes.goto[self.parser_stack.topo()][estado_atual["esquerda"]])
             new_token['classe'] = token
             new_token = self.altera_pilha(new_token['classe'])
+      
         return new_token
 
     def minimal_distance(self, limite : int, token : str, cadeia : str ,tipo : str = 'remocao') -> int:
@@ -147,8 +166,10 @@ class Recovery():
         entrada = token
         cadeia = copy.deepcopy(cadeia)
         cont = 0 if tipo == 'remocao' else -1   
+        
         while cont <= limite and entrada != 'ERRO' and entrada != None:
             estado_atual = self.mapaTransicoes.shiftReduceError[recovery_stack.topo()][entrada]
+            
             if estado_atual["acao"].value == Acoes.SHIFT.value:
 
                 recovery_stack.inserir(estado_atual["estado"])
@@ -167,9 +188,10 @@ class Recovery():
             
             elif estado_atual["acao"].value == Acoes.ACCEPT.value:
                 return limite                    
+            
             else:
                 return cont
-                       
+     
         return cont
 
 
@@ -180,15 +202,20 @@ class Recovery():
         levenshtein = []
         cadeia_base = copy.deepcopy(self.cadeia)
         cadeia = self.token['lexema'] + ' ' + cadeia_base if tipo_teste != 'remocao' else cadeia_base
+       
         for item in candidatos:
             score = self.minimal_distance(self.distance, item, tipo = tipo_teste, cadeia =cadeia)
+     
             if score >= self.distance:
                 candidatos_aceitos.append(item)
                 levenshtein.append(utils.levenshtein(item, self.token))
+     
         if len(candidatos_aceitos) > 0:
-            _token = {'classe' : candidatos_aceitos[np.argmin(levenshtein)],
-                    'lexema' : ''}
+            _token = {
+                'classe' : candidatos_aceitos[np.argmin(levenshtein)],
+                'lexema' : ''}
             return _token
+        
         else:
             return 0
 
@@ -214,6 +241,7 @@ class Recovery():
         else:
             return (0,id_action)
 
+
     # Remove o token atual e verifica se o parser aceita
     def remove_token(self) -> tuple: 
         entrada = 0
@@ -221,10 +249,13 @@ class Recovery():
         cadeia = copy.deepcopy(self.cadeia)
         next_token = self.scanner_lexema(cadeia) 
         entrada = 0
+     
         if next_token['classe'] != "ERRO" and  next_token['classe'] !=  None:
             score = self.minimal_distance(self.distance, next_token['classe'], cadeia=cadeia)
+     
             if score >= self.distance:
                 entrada = next_token
+     
         return entrada, id_action
         
 
@@ -232,12 +263,14 @@ class Recovery():
     def insere_terminal_antes(self) -> tuple:
         id_action = 2
         token_provavel = self.testa_candidatos(self.terminais_candidatos, 'insercao')
+       
         return (token_provavel,id_action)
          
 
     # substituir atual por cada candidato terminal        
     def substitui_por_terminal(self) -> tuple:
         id_action = 3
+     
         return (self.testa_candidatos(self.terminais_candidatos, 'remocao'), id_action)
     
 
