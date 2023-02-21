@@ -34,10 +34,12 @@ class MapaTransicoes:
                 "estado": int(estadoShift),
               }
             elif acao == 'R':
-              ladoEsquerdo = comando[1]
-              ladoDireito = comando[2].split(' ')
+              regra = int(comando[1])
+              ladoEsquerdo = comando[2]
+              ladoDireito = comando[3].split(' ')
               self.shiftReduceError[estado][simbolo] = {
                 "acao": Acoes.REDUCE,
+                "regra": regra,
                 "esquerda": ladoEsquerdo,
                 "direita": ladoDireito,
               }
