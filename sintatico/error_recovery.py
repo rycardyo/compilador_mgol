@@ -71,7 +71,7 @@ class Recovery():
         # minimal distance = 2
         distance = 2
 
-        acoes = [self.concatena,self.remove_token, self.insere_terminal_antes, self.substitui_por_terminal]
+        acoes = [self.concatena, self.remove_token, self.insere_terminal_antes, self.substitui_por_terminal]
 
         ok = False
         for acao in acoes:
@@ -129,6 +129,7 @@ class Recovery():
             afd_parou, lexema, _ = _afd.transicao(c)
             if afd_parou:
                 break
+
         token = { 
             "classe": _afd.estado_atual.token_class.value,
             "lexema": lexema,
@@ -138,6 +139,7 @@ class Recovery():
             token_existente = tabelaSimbolos.buscar(lexema)
             if token_existente != None:
                 token = token_existente
+
         return token
 
 
