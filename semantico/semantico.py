@@ -5,14 +5,11 @@ class Semantico:
   def __init__(self, tabelaSimbolos) -> None:
     self.pilha = Pilha()
     self.tabelaSimbolos = tabelaSimbolos
-<<<<<<< HEAD
-    self.cont = 0
-=======
     self.codigoGerado = ''
     self.deveEscreverCodigo = True
     self.linha = 0
     self.coluna = 0
->>>>>>> caef494fcf90066f43754b4cb3b161dad8ff145d
+    self.cont = 0
     pass
 
   def inserirPilha(self, lexema):
@@ -27,7 +24,7 @@ class Semantico:
     self.coluna = coluna
     func = getattr(Semantico, 'regra{}'.format(numeroRegra))
     func(self)
-
+  
   def regra7(self):
     tokenSemanticoTipo = self.pilha.topo()
     
@@ -140,7 +137,6 @@ class Semantico:
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
 
-<<<<<<< HEAD
 
   def regra14(self):
     tokenSemanticoARG = self.pilha.topo(2)
@@ -217,11 +213,8 @@ class Semantico:
     tokenSemanticoOPRD_2 = self.pilha.topo(1)
 
     if tokenSemanticoOPRD_1['tipo'] == tokenSemanticoOPRD_2['tipo']:
+      #continua...
 
-
-  def escreveArquivo(texto):
-    pass
-=======
   def escreveCodigo(self, texto):
     if self.deveEscreverCodigo == True:
       self.codigoGerado = self.codigoGerado + texto + "\n"
@@ -233,4 +226,3 @@ class Semantico:
     caminho_arquivo: str = '{path}/../output.c'.format(path=dirname(realpath(__file__)))
     arquivo = open(caminho_arquivo, 'w')
     arquivo.write(self.codigoGerado)
->>>>>>> caef494fcf90066f43754b4cb3b161dad8ff145d

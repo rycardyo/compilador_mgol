@@ -3,16 +3,23 @@ from os.path import realpath, dirname
 
 path = '{path}/../lexico'.format(path=dirname(realpath(__file__)))
 sys.path.insert(0, path)
+
+path = '{path}/../semantico'.format(path=dirname(realpath(__file__)))
+sys.path.insert(0, path)
+
 import copy
 from tokenLexico import Token
 from scanner import SCANNER
 from pilha import Pilha
 from mapaTransicoes import MapaTransicoes, Acoes
 from error_recovery import Recovery
+from semantico import Semantico
+from tabelaSimbolos import tabelaSimbolos
 
 def analisador():
   pilha = Pilha(0)
   mapaTransicoes = MapaTransicoes()
+  semantico = Semantico(tabelaSimbolos)
   caminho_arquivo: str = '{path}/teste.txt'.format(path=dirname(realpath(__file__)))
   arquivo = open(caminho_arquivo, 'r')
 
@@ -40,6 +47,9 @@ def analisador():
 
       if estado["acao"].value == Acoes.SHIFT.value:
         pilha.inserir(estado["estado"])
+
+        semantico.inserirPilha(token["lexema"])
+
         token, posicao = SCANNER(arquivo)
 
       elif estado["acao"].value == Acoes.REDUCE.value:
@@ -51,14 +61,19 @@ def analisador():
         except:
           print('ERRO GOTO')
           print('{} Para a entrada {}'.format(pilha.topo(), estado['esquerda']))
-        print("Redução: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
+          
+        print("Redução regra {regra}: {esquerda} -> {direita}".format(regra=estado["regra"], esquerda=estado["esquerda"], direita=estado["direita"]))
+
+        semantico.executarRegra(estado["regra"], posicao[0], posicao[1])
 
       elif estado["acao"].value == Acoes.ACCEPT.value:
           pilha.remover()
-          print("Aceita: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
+          print("Aceita regra 1: {esquerda} -> {direita}".format(esquerda=estado["esquerda"], direita=estado["direita"]))
+          semantico.imprimeCodigo()
           break
       else:
         #rotina de erro
+        semantico.deveEscreverCodigo = False
         estado_erro = mapaTransicoes.shiftReduceError[pilha.topo()]
         tokens_esperados_temp = [x for x in estado_erro if estado_erro[x]['acao'].value != Acoes.ERROR.value] 
         tokens_esperados = []
@@ -69,7 +84,7 @@ def analisador():
             tokens_esperados.append(x)
         del tokens_esperados_temp
         if posicao_ultimo_erro != posicao:
-          print('Erro {} na linha {} coluna {}, ao identificar o token "{}", eram esperados um dos tokens"{}"'.format(posicao[0],posicao[1],token['lexema'], tokens_esperados))
+          print('Erro na linha {} coluna {}, ao identificar o token "{}", eram esperados um dos tokens"{}"'.format(posicao[0],posicao[1],token['lexema'], tokens_esperados))
 
         token, pilha = Recovery(pilha, token, SCANNER, arquivo, mapaTransicoes, posicao, posicao_ultimo_erro, caminho_arquivo, map_tokens).recovery_token
         posicao_ultimo_erro = posicao
@@ -80,11 +95,8 @@ def analisador():
         else:
           pass
     else:
-
+      semantico.deveEscreverCodigo = False
       token, posicao = SCANNER(arquivo)
   arquivo.close()
-  map_lexemas = {
-
-  }
 
 analisador()
