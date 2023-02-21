@@ -1,10 +1,14 @@
-from semantico.pilha import Pilha
-
+from os.path import realpath, dirname
+from pilhaSemantica import Pilha
 
 class Semantico:
   def __init__(self, tabelaSimbolos) -> None:
     self.pilha = Pilha()
     self.tabelaSimbolos = tabelaSimbolos
+    self.codigoGerado = ''
+    self.deveEscreverCodigo = True
+    self.linha = 0
+    self.coluna = 0
     pass
 
   def inserirPilha(self, lexema):
@@ -13,6 +17,12 @@ class Semantico:
       'terminal': True
     }
     self.pilha.inserir(tokenSemantico)
+
+  def executarRegra(self, numeroRegra, linha, coluna):
+    self.linha = linha
+    self.coluna = coluna
+    func = getattr(Semantico, 'regra{}'.format(numeroRegra))
+    func(self)
 
   def regra7(self):
     tokenSemanticoTipo = self.pilha.topo()
@@ -108,13 +118,13 @@ class Semantico:
     tokenSemanticoId = self.pilha.topo(2)
 
     if tokenSemanticoId['tipo'] == "LITERAL":
-      self.escreveArquivo('scanf(\"%s\", id.lexema);')
+      self.escreveCodigo('scanf(\"%s\", id.lexema);')
     elif tokenSemanticoId['tipo'] == "INTEIRO":
-      self.escreveArquivo('scanf(\"%d\", &id.lexema);')
+      self.escreveCodigo('scanf(\"%d\", &id.lexema);')
     elif tokenSemanticoId['tipo'] == "REAL":
-      self.escreveArquivo('scanf(\"%lf\", &id.lexema);')
+      self.escreveCodigo('scanf(\"%lf\", &id.lexema);')
     else:
-      print("Variável não declarada em linha {linha} coluna {coluna}".format(linha=1, coluna=1))
+      print("Variável não declarada em linha {linha} coluna {coluna}".format(linha=self.linha, coluna=self.coluna))
 
     tokenSemantico = {
       'simbolo': 'ES',
@@ -126,5 +136,14 @@ class Semantico:
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
 
-  def escreveArquivo(texto):
-    pass
+  def escreveCodigo(self, texto):
+    if self.deveEscreverCodigo == True:
+      self.codigoGerado = self.codigoGerado + texto + "\n"
+
+  def imprimeCodigo(self):
+    if self.deveEscreverCodigo == False:
+      return
+    
+    caminho_arquivo: str = '{path}/../output.c'.format(path=dirname(realpath(__file__)))
+    arquivo = open(caminho_arquivo, 'w')
+    arquivo.write(self.codigoGerado)

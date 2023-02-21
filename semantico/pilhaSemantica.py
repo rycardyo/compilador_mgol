@@ -3,11 +3,11 @@ from typing import List
 class Pilha:
   __pilha: List
 
-  def __init__(self, estadoInicial: int) -> None:
-    self.__pilha = [estadoInicial]
+  def __init__(self) -> None:
+    self.__pilha = []
   
-  def inserir(self, estado: int):
-    self.__pilha.append(estado)
+  def inserir(self, tokenSemantico):
+    self.__pilha.append(tokenSemantico)
 
   def remover(self) -> int:
     return self.__pilha.pop()
@@ -16,7 +16,7 @@ class Pilha:
     return self.__pilha[-offset]
 
   def tamanho(self) -> int:
-    return self.__pilha.count()
+    return len(self.__pilha)
   
   def len(self) -> int:
     return len(self.__pilha)
