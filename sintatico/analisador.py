@@ -48,7 +48,7 @@ def analisador():
       if estado["acao"].value == Acoes.SHIFT.value:
         pilha.inserir(estado["estado"])
 
-        semantico.inserirPilha(token["lexema"])
+        semantico.inserirPilha(token["lexema"], token["tipo"])
 
         token, posicao = SCANNER(arquivo)
 

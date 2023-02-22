@@ -12,10 +12,11 @@ class Semantico:
     self.cont = 0
     pass
 
-  def inserirPilha(self, lexema):
+  def inserirPilha(self, lexema, tipo):
     tokenSemantico = {
       'simbolo': lexema,
-      'terminal': True
+      'terminal': True,
+      'tipo': tipo
     }
     self.pilha.inserir(tokenSemantico)
 
@@ -102,17 +103,21 @@ class Semantico:
   def regra7(self):
     tokenSemanticoTipo = self.pilha.topo()
     
-    lexema = self.pilha.topo(2)['simbolo']
+    lexema = self.pilha.topo(3)['simbolo']
     
-    if tokenSemanticoTipo['tipo'] == 'real':
+    if tokenSemanticoTipo['tipo'] == 'REAL':
       token = self.tabelaSimbolos.buscar(lexema)
       token['tipo'] = "REAL"
       self.tabelaSimbolos.atualizar(token)
 
-          
-    if tokenSemanticoTipo['tipo'] == 'inteiro':
+    elif tokenSemanticoTipo['tipo'] == 'INTEIRO':
       token = self.tabelaSimbolos.buscar(lexema)
       token['tipo'] = "INTEIRO"
+      self.tabelaSimbolos.atualizar(token)
+  
+    elif tokenSemanticoTipo['tipo'] == 'LITERAL':
+      token = self.tabelaSimbolos.buscar(lexema)
+      token['tipo'] = "LITERAL"
       self.tabelaSimbolos.atualizar(token)
 
     tokenSemantico = {
@@ -121,6 +126,7 @@ class Semantico:
       'tipo': tokenSemanticoTipo['tipo']
     }
     
+    self.pilha.remover()
     self.pilha.remover()
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
@@ -140,15 +146,19 @@ class Semantico:
     
     lexema = self.pilha.topo()['simbolo']
     
-    if tokenSemanticoTipo['tipo'] == 'real':
+    if tokenSemanticoTipo['tipo'] == 'REAL':
       token = self.tabelaSimbolos.buscar(lexema)
       token['tipo'] = "REAL"
       self.tabelaSimbolos.atualizar(token)
 
-
-    if tokenSemanticoTipo['tipo'] == 'inteiro':
+    elif tokenSemanticoTipo['tipo'] == 'INTEIRO':
       token = self.tabelaSimbolos.buscar(lexema)
       token['tipo'] = "INTEIRO"
+      self.tabelaSimbolos.atualizar(token)
+  
+    elif tokenSemanticoTipo['tipo'] == 'LITERAL':
+      token = self.tabelaSimbolos.buscar(lexema)
+      token['tipo'] = "LITERAL"
       self.tabelaSimbolos.atualizar(token)
 
     tokenSemantico = {
@@ -209,12 +219,14 @@ class Semantico:
   def regra13(self):
     tokenSemanticoId = self.pilha.topo(2)
 
-    if tokenSemanticoId['tipo'] == "LITERAL":
-      self.escreveCodigo('scanf(\"%s\", id.lexema);')
-    elif tokenSemanticoId['tipo'] == "INTEIRO":
-      self.escreveCodigo('scanf(\"%d\", &id.lexema);')
-    elif tokenSemanticoId['tipo'] == "REAL":
-      self.escreveCodigo('scanf(\"%lf\", &id.lexema);')
+    token = self.tabelaSimbolos.buscar(tokenSemanticoId['simbolo'])
+
+    if token['tipo'] == "LITERAL":
+      self.escreveCodigo('scanf(\"%s\", {});'.format(token['lexema']))
+    elif token['tipo'] == "INTEIRO":
+      self.escreveCodigo('scanf(\"%d\", &{});'.format(token['lexema']))
+    elif token['tipo'] == "REAL":
+      self.escreveCodigo('scanf(\"%lf\", &{});'.format(token['lexema']))
     else:
       print("Variável não declarada em linha {linha} coluna {coluna}".format(linha=self.linha, coluna=self.coluna))
 
@@ -231,7 +243,7 @@ class Semantico:
 
   def regra14(self):
     tokenSemanticoARG = self.pilha.topo(2)
-    self.escreveCodigo('printf("{}");'.format(tokenSemanticoARG['simbolo']))
+    self.escreveCodigo('printf("{}");'.format(tokenSemanticoARG['lexema']))
 
     tokenSemantico = {
       'simbolo' : 'ES',
@@ -302,19 +314,19 @@ class Semantico:
     token = self.tabelaSimbolos.buscar(lexema)
 
     # Busco pelo token pelo fato do id da pilha semantica ter perdido a referencia do id anteriormente declarado
-    if token != None:
-      if token['tipo'] != None:
-        if token['tipo'] == tokenSemanticoLD['tipo']:
-          self.escreveCodigo('{id_lexema} {rcb_tipo} {LD_lexema}'.format(tokenSemanticoId['simbolo'], tokenSemanticoRcb['tipo'], tokenSemanticoLD['simbolo']))
-        else:
-          print("Erro: Tipos diferentes para atribuição na linha {linha} coluna {coluna}".format(self.linha, self.coluna))
+    tokenEncontrado = token != None and token['tipo'] != None
+    if tokenEncontrado:
+      if token['tipo'] == tokenSemanticoLD['tipo']:
+        self.escreveCodigo('{} {} {}'.format(tokenSemanticoId['simbolo'], tokenSemanticoRcb['tipo'], tokenSemanticoLD['simbolo']))
+      else:
+        print("Erro: Tipos diferentes para atribuição na linha {linha} coluna {coluna}".format(self.linha, self.coluna))
     else:
-      print("Erro: Operandos com tipos incompatíveis em linha {linha} coluna {coluna}".format(self.linha, self.coluna))    
+      print("Erro: Variável não declarada em linha {linha} coluna {coluna}".format(self.linha, self.coluna))
 
 
   def regra20(self):
     tokenSemanticoOPRD_1 = self.pilha.topo(3)
-    tokenSemanticoOpa = self.pilha(2)
+    tokenSemanticoOpa = self.pilha.topo(2)
     tokenSemanticoOPRD_2 = self.pilha.topo(1)
 
     tokenSemantico = {
@@ -323,20 +335,22 @@ class Semantico:
       'lexema' : None
     }
 
-    if tokenSemanticoOPRD_1['tipo'] == tokenSemanticoOPRD_2['tipo']:
-      tokenSemantico['lexema'] = 'T{}'.format(self.cont)
-      
-      ###########################
-      # VERIFICAR TIPO E LEXEMA #
-      ###########################
+    self.cont += 1
+    tokenSemantico['lexema'] = 'T{}'.format(self.cont)
+    
+    ###########################
+    # VERIFICAR TIPO E LEXEMA #
+    ###########################
 
-      self.escreveCodigo('T{cont} = {oprd1_lexema} {opa_tipo} {oprd2_lemexa}'.format(
-                            cont=self.cont, oprd1_lexema=tokenSemanticoOPRD_1['lexema'],
-                            opa_tipo=tokenSemanticoOpa['tipo'],oprd2_lexema=tokenSemanticoOPRD_1['lexema']))
-      
-      self.cont += 1
-    else: 
+    self.escreveCodigo('T{cont} = {oprd1_lexema} {opa_tipo} {oprd2_lexema}'.format(
+                          cont=self.cont, oprd1_lexema=tokenSemanticoOPRD_1['lexema'],
+                          opa_tipo=tokenSemanticoOpa['simbolo'],oprd2_lexema=tokenSemanticoOPRD_1['lexema']))
+  
+
+    if tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_2['tipo'] or tokenSemanticoOPRD_1['tipo'] == 'LITERAL':
       print('Erro: Operandos com tipos incompatíveis em linha {linha} coluna {coluna}'.format(linha=self.linha, coluna=self.coluna))
+    else:
+      tokenSemantico['tipo'] = tokenSemanticoOPRD_1['tipo']
 
     self.pilha.remover()
     self.pilha.remover()
@@ -368,15 +382,11 @@ class Semantico:
       'lexema'   : None
     }
 
-    token_encontrado = False
-    if token != None:
-      if token['tipo'] != None:
-        token_encontrado = True
-        for key in tokenSemanticoId:
-          if key != 'simbolo':
-            tokenSemantico[key] = tokenSemanticoId['key']
-      
-    if not token_encontrado:
+    token_encontrado = token != None and token['tipo'] != None
+    if token_encontrado:
+      tokenSemantico['lexema'] = token['lexema']
+      tokenSemantico['tipo'] = token['tipo']
+    else:
       print('ERRO: Vriável não declarada em linha {linha} coluna {coluna}'.format(self.linha, self.coluna))
 
     self.pilha.remover()
@@ -388,12 +398,9 @@ class Semantico:
     tokenSemantico = {
       'simbolo'  : 'OPRD',
       'terminal' : False,
-      'lexema'   : None
+      'lexema'   : tokenSemanticoNum['simbolo'],
+      'tipo'     : tokenSemanticoNum['tipo']
     }
-
-    for key in tokenSemanticoNum:
-      if key != 'simbolo':
-        tokenSemantico[key] = tokenSemanticoNum['key']
     
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
@@ -438,15 +445,15 @@ class Semantico:
     }
     self.pilha.inserir(tokenSemantico)
 
-    self.escreveCodigo('if ({}) {'.format(tokenSemanticoEXP_R['lexema']))
+    self.escreveCodigo('if ({}) {{'.format(tokenSemanticoEXP_R['lexema']))
 
   def regra27(self):
     tokenSemanticoOPRD_2 = self.pilha.remover()
     tokenSemanticoOPR = self.pilha.remover()
     tokenSemanticoOPRD_1 = self.pilha.remover()
 
-    oprd1EhNumero = tokenSemanticoOPRD_1['tipo'] in ('inteiro', 'real')
-    oprd2EhNumero = tokenSemanticoOPRD_2['tipo'] in ('inteiro', 'real')
+    oprd1EhNumero = tokenSemanticoOPRD_1['tipo'] in ('INTEIRO', 'REAL')
+    oprd2EhNumero = tokenSemanticoOPRD_2['tipo'] in ('INTEIRO', 'REAL')
 
     if (tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_1['tipo'] and (not oprd1EhNumero or not oprd2EhNumero)):
       self.deveEscreverCodigo = False
@@ -489,7 +496,7 @@ class Semantico:
       'terminal' : False,
     }
     self.pilha.inserir(tokenSemantico)
-    self.escreveCodigo('}')
+    #self.escreveCodigo('}')
 
   def regra32(self):
     self.pilha.remover()
@@ -500,7 +507,7 @@ class Semantico:
     }
     self.pilha.inserir(tokenSemantico)
 
-    self.escreveCodigo('}')
+    #self.escreveCodigo('}')
 
   def escreveCodigo(self, texto):
     if self.deveEscreverCodigo == True:
