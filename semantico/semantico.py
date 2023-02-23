@@ -10,6 +10,7 @@ class Semantico:
     self.linha = 0
     self.coluna = 0
     self.cont = 0
+    self.identacao = 1
     pass
 
   def inserirPilha(self, lexema, tipo):
@@ -73,8 +74,6 @@ class Semantico:
     self.pilha.inserir(tokenSemantico)    
 
   def regra5(self):
-    self.escreveCodigo('\n \n \n')
-    
     self.pilha.remover()
     self.pilha.remover()
 
@@ -98,6 +97,8 @@ class Semantico:
     }
 
     self.pilha.inserir(tokenSemantico)
+
+    self.escreveCodigo(';')
 
 
   def regra7(self):
@@ -130,6 +131,8 @@ class Semantico:
     self.pilha.remover()
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
+
+    self.escreveCodigo(', {}'.format(lexema), False)
 
 
   def regra8(self):
@@ -170,6 +173,8 @@ class Semantico:
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
 
+    self.escreveCodigo('{}'.format(lexema), False)
+
 
   def regra9(self):
     tokenSemantico = {
@@ -180,6 +185,8 @@ class Semantico:
 
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
+
+    self.escreveCodigo('int', False)
 
 
   def regra10(self):
@@ -192,6 +199,8 @@ class Semantico:
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
 
+    self.escreveCodigo('float', False)
+
 
   def regra11(self):
     tokenSemantico = {
@@ -202,6 +211,8 @@ class Semantico:
 
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
+
+    self.escreveCodigo('literal', False)
 
 
   def regra12(self):
@@ -228,7 +239,8 @@ class Semantico:
     elif token['tipo'] == "REAL":
       self.escreveCodigo('scanf(\"%lf\", &{});'.format(token['lexema']))
     else:
-      print("Variável não declarada em linha {linha} coluna {coluna}".format(linha=self.linha, coluna=self.coluna))
+      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
+      self.deveEscreverCodigo = False
 
     tokenSemantico = {
       'simbolo': 'ES',
@@ -243,7 +255,16 @@ class Semantico:
 
   def regra14(self):
     tokenSemanticoARG = self.pilha.topo(2)
-    self.escreveCodigo('printf("{}");'.format(tokenSemanticoARG['lexema']))
+    tipo = tokenSemanticoARG['tipo'] if 'tipo' in tokenSemanticoARG else None
+
+    if tipo == 'LITERAL':
+      self.escreveCodigo('printf("%s", {});'.format(tokenSemanticoARG['lexema']))
+    elif tipo == 'INTEIRO':
+      self.escreveCodigo('printf("%d", {});'.format(tokenSemanticoARG['lexema']))
+    elif tipo == 'REAL':
+      self.escreveCodigo('printf("%f", {});'.format(tokenSemanticoARG['lexema']))
+    else:
+      self.escreveCodigo('printf("{}");'.format(tokenSemanticoARG['lexema']))
 
     tokenSemantico = {
       'simbolo' : 'ES',
@@ -261,7 +282,7 @@ class Semantico:
     tokenSemantico = {
       'simbolo' : 'ARG',
       'terminal' : False,
-      'lexema' : tokenSemanticoLit['simbolo']
+      'lexema' : tokenSemanticoLit['simbolo'][1:-1]
     }
 
     self.pilha.remover()
@@ -276,17 +297,17 @@ class Semantico:
     lexema = tokenSemanticoId['simbolo']
     token = self.tabelaSimbolos.buscar(lexema)
 
-    if token != None:
-      if token['tipo'] != None:
-        self.regra15()
-    else:
-      print("Erro: Variável não declarada em linha {linha} coluna {coluna}".format(self.linha, self.coluna))
+    tokenExiste = token != None and token['tipo'] != None
 
+    if not tokenExiste:
+      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
+      self.deveEscreverCodigo = False
 
     tokenSemantico = {
       'simbolo' : 'ARG',
       'terminal' : False,
-      'lexema' :  None
+      'tipo' : token["tipo"] if "tipo" in token else None,
+      'lexema' : token["lexema"] if "lexema" in token else None
     }
 
     self.pilha.remover()
@@ -317,12 +338,13 @@ class Semantico:
     tokenEncontrado = token != None and token['tipo'] != None
     if tokenEncontrado:
       if token['tipo'] == tokenSemanticoLD['tipo']:
-        self.escreveCodigo('{} {} {}'.format(tokenSemanticoId['simbolo'], tokenSemanticoRcb['tipo'], tokenSemanticoLD['simbolo']))
+        self.escreveCodigo('{} = {};'.format(tokenSemanticoId['simbolo'], tokenSemanticoLD['lexema']))
       else:
-        print("Erro: Tipos diferentes para atribuição na linha {linha} coluna {coluna}".format(self.linha, self.coluna))
+        print("ERRO Semantico: Tipos diferentes para atribuição em linha {} coluna {}".format(self.linha, self.coluna))
+        self.deveEscreverCodigo = False
     else:
-      print("Erro: Variável não declarada em linha {linha} coluna {coluna}".format(self.linha, self.coluna))
-
+      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
+      self.deveEscreverCodigo = False
 
   def regra20(self):
     tokenSemanticoOPRD_1 = self.pilha.topo(3)
@@ -342,13 +364,14 @@ class Semantico:
     # VERIFICAR TIPO E LEXEMA #
     ###########################
 
-    self.escreveCodigo('T{cont} = {oprd1_lexema} {opa_tipo} {oprd2_lexema}'.format(
+    self.escreveCodigo('T{cont} = {oprd1_lexema} {opa_tipo} {oprd2_lexema};'.format(
                           cont=self.cont, oprd1_lexema=tokenSemanticoOPRD_1['lexema'],
-                          opa_tipo=tokenSemanticoOpa['simbolo'],oprd2_lexema=tokenSemanticoOPRD_1['lexema']))
+                          opa_tipo=tokenSemanticoOpa['simbolo'],oprd2_lexema=tokenSemanticoOPRD_2['lexema']))
   
 
     if tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_2['tipo'] or tokenSemanticoOPRD_1['tipo'] == 'LITERAL':
-      print('Erro: Operandos com tipos incompatíveis em linha {linha} coluna {coluna}'.format(linha=self.linha, coluna=self.coluna))
+      print('ERRO Semantico: Operandos com tipos incompatíveis em linha {} coluna {}'.format(self.linha, self.coluna))
+      self.deveEscreverCodigo = False
     else:
       tokenSemantico['tipo'] = tokenSemanticoOPRD_1['tipo']
 
@@ -387,7 +410,8 @@ class Semantico:
       tokenSemantico['lexema'] = token['lexema']
       tokenSemantico['tipo'] = token['tipo']
     else:
-      print('ERRO: Vriável não declarada em linha {linha} coluna {coluna}'.format(self.linha, self.coluna))
+      print('ERRO Semantico: Vriável não declarada em linha {} coluna {}'.format(self.linha, self.coluna))
+      self.deveEscreverCodigo = False
 
     self.pilha.remover()
     self.pilha.inserir(tokenSemantico)
@@ -446,6 +470,7 @@ class Semantico:
     self.pilha.inserir(tokenSemantico)
 
     self.escreveCodigo('if ({}) {{'.format(tokenSemanticoEXP_R['lexema']))
+    self.identacao = self.identacao + 1
 
   def regra27(self):
     tokenSemanticoOPRD_2 = self.pilha.remover()
@@ -456,8 +481,8 @@ class Semantico:
     oprd2EhNumero = tokenSemanticoOPRD_2['tipo'] in ('INTEIRO', 'REAL')
 
     if (tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_1['tipo'] and (not oprd1EhNumero or not oprd2EhNumero)):
+      print("ERRO Semantico: Operandos com tipos incompatíveis em linha {} coluna {}".format(self.linha, self.coluna))
       self.deveEscreverCodigo = False
-      print("Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
 
     self.cont = self.cont + 1
     variavelTemporaria = 'T{}'.format(self.cont)
@@ -469,7 +494,7 @@ class Semantico:
     }
     self.pilha.inserir(tokenSemantico)
 
-    self.escreveCodigo('{} = {} {} {}'.format(variavelTemporaria, tokenSemanticoOPRD_1['lexema'], tokenSemanticoOPR['tipo'], tokenSemanticoOPRD_2['lexema']))
+    self.escreveCodigo('{} = {} {} {};'.format(variavelTemporaria, tokenSemanticoOPRD_1['lexema'], tokenSemanticoOPR['simbolo'], tokenSemanticoOPRD_2['lexema']))
 
   def regra28(self):
     self.pilha.remover()
@@ -496,6 +521,8 @@ class Semantico:
       'terminal' : False,
     }
     self.pilha.inserir(tokenSemantico)
+
+    self.identacao = self.identacao - 1
     #self.escreveCodigo('}')
 
   def regra32(self):
@@ -507,11 +534,18 @@ class Semantico:
     }
     self.pilha.inserir(tokenSemantico)
 
-    #self.escreveCodigo('}')
+    self.identacao = self.identacao - 1
+    self.escreveCodigo('}')
+    self.escreveCabecalho()
 
-  def escreveCodigo(self, texto):
-    if self.deveEscreverCodigo == True:
-      self.codigoGerado = self.codigoGerado + texto + "\n"
+  def escreveCodigo(self, texto, novaLinha = True):
+    if self.deveEscreverCodigo == False:
+      return
+
+    for i in range (0, self.identacao):
+      self.codigoGerado = self.codigoGerado + "\t"
+
+    self.codigoGerado = self.codigoGerado + texto + ("\n" if novaLinha else "")
 
 
   def imprimeCodigo(self):
@@ -521,3 +555,21 @@ class Semantico:
     caminho_arquivo: str = '{path}/../output.c'.format(path=dirname(realpath(__file__)))
     arquivo = open(caminho_arquivo, 'w')
     arquivo.write(self.codigoGerado)
+
+  def escreveCabecalho(self):
+    if self.deveEscreverCodigo == False:
+      return
+
+    cabecalho = ''
+    cabecalho = cabecalho + '#include <stdio.h>\n'
+    cabecalho = cabecalho + 'typedef char literal[256];\n'
+    cabecalho = cabecalho + 'void main(void)\n'
+    cabecalho = cabecalho + '{\n'
+    cabecalho = cabecalho + '\t/*----Variaveis temporarias----*/\n'
+
+    for i in range (0, self.cont):
+      cabecalho = cabecalho + '\tint T{};\n'.format(i + 1)
+
+    cabecalho = cabecalho + '\t/*------------------------------*/\n'
+
+    self.codigoGerado = cabecalho + self.codigoGerado
