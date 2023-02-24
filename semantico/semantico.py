@@ -239,7 +239,7 @@ class Semantico:
     elif token['tipo'] == "REAL":
       self.escreveCodigo('scanf(\"%lf\", &{});'.format(token['lexema']))
     else:
-      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
+      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha-1, self.coluna))
       self.deveEscreverCodigo = False
 
     tokenSemantico = {
@@ -300,7 +300,7 @@ class Semantico:
     tokenExiste = token != None and token['tipo'] != None
 
     if not tokenExiste:
-      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
+      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha-1, self.coluna))
       self.deveEscreverCodigo = False
 
     tokenSemantico = {
@@ -337,13 +337,14 @@ class Semantico:
     # Busco pelo token pelo fato do id da pilha semantica ter perdido a referencia do id anteriormente declarado
     tokenEncontrado = token != None and token['tipo'] != None
     if tokenEncontrado:
-      if token['tipo'] == tokenSemanticoLD['tipo']:
+      ehIgual = token['tipo'] == tokenSemanticoLD['tipo']
+      if ehIgual:
         self.escreveCodigo('{} = {};'.format(tokenSemanticoId['simbolo'], tokenSemanticoLD['lexema']))
       else:
-        print("ERRO Semantico: Tipos diferentes para atribuição em linha {} coluna {}".format(self.linha, self.coluna))
+        print("ERRO Semantico: Tipos diferentes para atribuição em linha {} coluna {}".format(self.linha-1, self.coluna))
         self.deveEscreverCodigo = False
     else:
-      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha, self.coluna))
+      print("ERRO Semantico: Variável não declarada em linha {} coluna {}".format(self.linha-1, self.coluna))
       self.deveEscreverCodigo = False
 
   def regra20(self):
@@ -354,7 +355,8 @@ class Semantico:
     tokenSemantico = {
       'simbolo' : 'LD',
       'terminal' : False,
-      'lexema' : None
+      'lexema' : None,
+      'tipo' : None,
     }
 
     self.cont += 1
@@ -368,12 +370,17 @@ class Semantico:
                           cont=self.cont, oprd1_lexema=tokenSemanticoOPRD_1['lexema'],
                           opa_tipo=tokenSemanticoOpa['simbolo'],oprd2_lexema=tokenSemanticoOPRD_2['lexema']))
   
-
-    if tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_2['tipo'] or tokenSemanticoOPRD_1['tipo'] == 'LITERAL':
-      print('ERRO Semantico: Operandos com tipos incompatíveis em linha {} coluna {}'.format(self.linha, self.coluna))
+    ehDiferente = tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_2['tipo']
+    ehLiteral = tokenSemanticoOPRD_1['tipo'] == 'LITERAL' or tokenSemanticoOPRD_2['tipo'] == 'LITERAL'
+    
+    if ehLiteral:
+      print('ERRO Semantico: Operandos com tipos incompatíveis em linha {} coluna {}'.format(self.linha-1, self.coluna))
       self.deveEscreverCodigo = False
+   
+    elif ehDiferente:
+      tokenSemantico['tipo'] = 'REAL'
     else:
-      tokenSemantico['tipo'] = tokenSemanticoOPRD_1['tipo']
+      tokenSemantico['tipo'] = 'INTEIRO'
 
     self.pilha.remover()
     self.pilha.remover()
@@ -402,7 +409,8 @@ class Semantico:
     tokenSemantico = {
       'simbolo'  : 'OPRD',
       'terminal' : False,
-      'lexema'   : None
+      'lexema'   : None,
+      'tipo'     : None
     }
 
     token_encontrado = token != None and token['tipo'] != None
@@ -410,7 +418,7 @@ class Semantico:
       tokenSemantico['lexema'] = token['lexema']
       tokenSemantico['tipo'] = token['tipo']
     else:
-      print('ERRO Semantico: Vriável não declarada em linha {} coluna {}'.format(self.linha, self.coluna))
+      print('ERRO Semantico: Variável não declarada em linha {} coluna {}'.format(self.linha-1, self.coluna))
       self.deveEscreverCodigo = False
 
     self.pilha.remover()
@@ -479,11 +487,11 @@ class Semantico:
 
     oprd1EhNumero = tokenSemanticoOPRD_1['tipo'] in ('INTEIRO', 'REAL')
     oprd2EhNumero = tokenSemanticoOPRD_2['tipo'] in ('INTEIRO', 'REAL')
-
-    if (tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_1['tipo'] and (not oprd1EhNumero or not oprd2EhNumero)):
-      print("ERRO Semantico: Operandos com tipos incompatíveis em linha {} coluna {}".format(self.linha, self.coluna))
+    ehDiferente = tokenSemanticoOPRD_1['tipo'] != tokenSemanticoOPRD_1['tipo']
+    if (not oprd1EhNumero or not oprd2EhNumero):
+      print("ERRO Semantico: Operandos com tipos incompatíveis em linha {} coluna {}".format(self.linha-1, self.coluna))
       self.deveEscreverCodigo = False
-
+  
     self.cont = self.cont + 1
     variavelTemporaria = 'T{}'.format(self.cont)
 
